@@ -1,5 +1,8 @@
 import { createServer } from 'node:http';
 import { previewTransaction } from './transactions/service.js';
+import { loadConfig, publicConfig } from './config.js';
+import { createTokenVerifier } from './integrations/oauth.js';
+import { createSpeechService, createSpeechLimiter } from './integrations/elevenlabs.js';
 
 async function readJson(request) {
   const chunks = [];
@@ -14,23 +17,60 @@ async function readJson(request) {
   return parsed;
 }
 
-export function createApp({ aiUrl = process.env.AI_SERVICE_URL ?? 'http://127.0.0.1:8000', webOrigin = process.env.WEB_ORIGIN ?? 'http://localhost:5173' } = {}) {
+export function createApp({
+  aiUrl = process.env.AI_SERVICE_URL ?? 'http://127.0.0.1:8000',
+  webOrigin = process.env.WEB_ORIGIN ?? 'http://localhost:5173',
+  config = loadConfig(),
+  verifyAccessToken = config.authMode === 'required' ? createTokenVerifier(config) : null,
+  synthesize = createSpeechService(config),
+  allowSpeech = createSpeechLimiter()
+} = {}) {
   return createServer(async (request, response) => {
     response.setHeader('Content-Type', 'application/json; charset=utf-8');
+    response.setHeader('Cache-Control', 'no-store');
+    response.setHeader('X-Content-Type-Options', 'nosniff');
     response.setHeader('Access-Control-Allow-Origin', webOrigin);
     response.setHeader('Vary', 'Origin');
-    response.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    response.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     response.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     const send = (status, value) => { response.writeHead(status); response.end(JSON.stringify(value)); };
     const path = new URL(request.url, 'http://localhost').pathname;
     if (request.method === 'OPTIONS') { response.writeHead(204); response.end(); return; }
     if (request.method === 'GET' && path === '/health') return send(200, { status: 'ok', service: 'api', mode: 'demo' });
+    if (request.method === 'GET' && path === '/api/config') return send(200, publicConfig(config));
+    let subject = 'demo';
+    if (path.startsWith('/api/') && config.authMode === 'required') {
+      const authorization = request.headers.authorization;
+      const token = typeof authorization === 'string' && /^Bearer\s+(\S+)$/i.exec(authorization)?.[1];
+      try {
+        if (!token) throw new Error('Token requerido.');
+        subject = (await verifyAccessToken(token)).sub;
+      } catch {
+        response.setHeader('WWW-Authenticate', 'Bearer');
+        return send(401, { error: 'Inicia sesión de nuevo para continuar.' });
+      }
+    }
     if (request.method === 'GET' && path === '/api/account') return send(200, { balance: 24500, currency: 'MXN', mode: 'demo' });
     if (request.method === 'POST' && path === '/api/transactions') return send(501, { error: 'Las transacciones reales aún no están implementadas.' });
-    if (request.method !== 'POST' || !['/api/chat', '/api/transactions/preview'].includes(path)) return send(404, { error: 'Ruta no encontrada.' });
+    if (request.method !== 'POST' || !['/api/chat', '/api/transactions/preview', '/api/speech'].includes(path)) return send(404, { error: 'Ruta no encontrada.' });
     let body;
     try { body = await readJson(request); }
     catch { return send(400, { error: 'JSON inválido o solicitud demasiado grande.' }); }
+    if (path === '/api/speech') {
+      if (config.authMode !== 'required') return send(403, { error: 'Inicia sesión para usar la voz.' });
+      if (typeof body.text !== 'string' || !body.text.trim() || body.text.length > 2000) return send(400, { error: 'El texto debe contener entre 1 y 2000 caracteres.' });
+      if (!allowSpeech(subject)) {
+        response.setHeader('Retry-After', '60');
+        return send(429, { error: 'Espera un minuto antes de generar más audio.' });
+      }
+      try {
+        const audio = await synthesize(body.text.trim());
+        response.setHeader('Content-Type', 'audio/mpeg');
+        response.writeHead(200);
+        response.end(audio);
+        return;
+      } catch (error) { return send(error.status ?? 502, { error: error.message ?? 'No se pudo generar la voz.' }); }
+    }
     if (path === '/api/transactions/preview') {
       try { return send(200, previewTransaction(body)); }
       catch (error) { return send(400, { error: error.message }); }

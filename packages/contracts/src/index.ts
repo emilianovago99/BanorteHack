@@ -21,3 +21,14 @@ export interface AccountSummary {
   currency: 'MXN';
   mode: 'demo';
 }
+
+export interface PublicConfig {
+  auth: {
+    mode: 'required' | 'demo';
+    issuer: string;
+    audience: string;
+    webClientId: string;
+    mobileClientId: string;
+  };
+  voice: { enabled: boolean };
+}

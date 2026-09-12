@@ -25,7 +25,11 @@ services:
     ports: ["127.0.0.1:8000:8000"]
   api:
     build:
-      context: ../../services/api
+      context: ../..
+      dockerfile: services/api/Dockerfile
+    env_file:
+      - path: ../../services/api/.env
+        required: false
     environment:
       HOST: 0.0.0.0
       PORT: 3001

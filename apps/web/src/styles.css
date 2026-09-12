@@ -18,6 +18,8 @@ button:focus-visible, input:focus-visible { outline: 3px solid #157da7; outline-
 nav { display: flex; gap: 12px; flex-wrap: wrap; }
 .secondary { background: white; color: #b90024; border: 1px solid #b90024; text-transform: capitalize; }
 figure { margin: 0; }
+.speech { margin-top: 20px; }
+audio { width: 100%; }
 figcaption { font-weight: 600; margin-bottom: 20px; }
 table { border-collapse: collapse; width: 100%; font-size: 14px; margin-top: 16px; }
 td, th { padding: 6px; text-align: left; border-bottom: 1px solid #eee; }

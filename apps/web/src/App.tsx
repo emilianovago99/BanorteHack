@@ -1,8 +1,11 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import type { AccountSummary, ChatResponse, FinancialAction } from '@banortehack/contracts';
 import { FinancialChart } from '@banortehack/visual-engine';
+import { useSession } from './session';
+import { SpeechPlayer } from './SpeechPlayer';
 
 export function App() {
+  const { request, logout, voiceEnabled, demo } = useSession();
   const [account, setAccount] = useState<AccountSummary>();
   const [prompt, setPrompt] = useState('');
   const [messages, setMessages] = useState<ChatResponse[]>([]);
@@ -10,11 +13,11 @@ export function App() {
   const [notice, setNotice] = useState('');
 
   useEffect(() => {
-    fetch('/api/account').then(async response => {
+    request('/api/account').then(async response => {
       if (!response.ok) throw new Error();
       setAccount(await response.json());
     }).catch(() => setNotice('No se pudo cargar el saldo. Verifica que la API esté encendida.'));
-  }, []);
+  }, [request]);
 
   async function send(event: FormEvent) {
     event.preventDefault();
@@ -22,7 +25,7 @@ export function App() {
     setBusy(true);
     setNotice('');
     try {
-      const response = await fetch('/api/chat', {
+      const response = await request('/api/chat', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: prompt })
       });
       if (!response.ok) throw new Error('No se pudo responder. Verifica que la API y el servicio de IA estén encendidos.');
@@ -36,7 +39,7 @@ export function App() {
 
   async function simulate(action: FinancialAction) {
     try {
-      const response = await fetch('/api/transactions/preview', {
+      const response = await request('/api/transactions/preview', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action, amount: 100 })
       });
       if (!response.ok) throw new Error();
@@ -46,10 +49,10 @@ export function App() {
   }
 
   return <main>
-    <header><strong>BANORTE<span>HACK</span></strong><small>Prototipo · Datos ficticios</small></header>
+    <header><strong>BANORTE<span>HACK</span></strong><small>Prototipo · Datos ficticios</small>{!demo && <button className="secondary" onClick={logout}>Cerrar sesión</button>}</header>
     <section className="balance"><p>Tu saldo disponible</p><h1>{account ? new Intl.NumberFormat('es-MX', { style: 'currency', currency: account.currency }).format(account.balance) : '—'}</h1><p>Una conversación para entender tus finanzas.</p></section>
     <section aria-label="Conversación" aria-live="polite">
-      {messages.map((reply, index) => <article key={index}><p>{reply.message}</p><FinancialChart data={reply.visualization} /></article>)}
+      {messages.map((reply, index) => <article key={index}><p>{reply.message}</p><FinancialChart data={reply.visualization} />{voiceEnabled && <SpeechPlayer text={reply.message} />}</article>)}
     </section>
     <form onSubmit={send}>
       <label htmlFor="message">¿Qué quieres explorar?</label>

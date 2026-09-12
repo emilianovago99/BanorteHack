@@ -13,7 +13,7 @@ flowchart LR
   MCP -. repositorios pendientes .-> PG[PostgreSQL / Tiger Data]
   MCP -. repositorios pendientes .-> Mongo[MongoDB Atlas]
   API --> Preview[Vista previa de transacciones]
-  API -. pendiente .-> Voice[ElevenLabs]
+  API --> Voice[ElevenLabs]
   Preview -. pendiente .-> Solana[Solana / REST]
   Web --> Visual[Visual Engine / Chart.js]
 ```
@@ -29,17 +29,17 @@ flowchart LR
 | Datos | `infra/database`, `services/ai/app/data` | Esquema inicial y factories de conexión; persistencia pendiente |
 | Visual | `packages/visual-engine` | Renderizador Chart.js; contrato interno, no protocolo A2UI completo |
 | Transacciones | `services/api/src/transactions` | Vista previa validada; ejecución real pendiente |
-| Voz / seguridad | `services/api/src/integrations` | Puntos de integración documentados |
+| Voz / seguridad | `services/api/src/integrations` | ElevenLabs MP3 y validación Auth0 JWT; login/reproducción en web y móvil |
 | Infraestructura | `infra/docker`, `infra/vultr` | Compose local y guía para futuro despliegue |
 
 ## Decisiones y siguientes pasos
 
-- El flujo ejecutable usa datos ficticios y no requiere cuentas externas. Agregar una clave Gemini por sí solo no cambia el modo de operación.
+- Los datos financieros son ficticios. Para ejecutar sin cuentas externas, configurar explícitamente `AUTH_MODE=demo`; el modo habitual requiere Auth0. Agregar una clave Gemini por sí solo no cambia las respuestas del chat.
 - La demo grafica series predefinidas. Faltan proyecciones dinámicas, entradas multimodales y el cliente MCP en el orquestador.
 - Para A2UI se debe incorporar un renderer compatible y validar mensajes contra una versión del protocolo y un catálogo de componentes. El contrato actual de gráficas es específico del proyecto.
 - El documento menciona una referencia Figma, pero no contiene enlace ni archivo de diseño. La interfaz incluida es una base propia.
 - PostgreSQL almacena importes con `NUMERIC`, con extensión TimescaleDB para series temporales. Faltan repositorios, migraciones incrementales, agregados y políticas de compresión. MongoDB está reservado a perfiles y preferencias.
-- OAuth2 y cifrado AES están pendientes. Antes de usar datos reales, implementar autorización por usuario, TLS, cifrado de campos sensibles con AES-GCM y llaves administradas, auditoría y manejo de secretos. No se afirma que la plantilla ya tenga estas protecciones.
+- OAuth2 está integrado con Auth0; [configuración](auth-and-voice.md). Antes de usar datos reales, implementar persistencia y autorización por usuario, TLS, cifrado de campos sensibles con AES-GCM y llaves administradas, y auditoría. Estas protecciones adicionales siguen pendientes.
 
 ## Referencias técnicas
 

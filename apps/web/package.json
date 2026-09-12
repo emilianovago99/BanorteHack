@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": { "dev": "vite", "build": "tsc --noEmit && vite build", "typecheck": "tsc --noEmit" },
   "dependencies": {
+    "@auth0/auth0-react": "2.4.0",
     "@banortehack/contracts": "0.1.0",
     "@banortehack/visual-engine": "0.1.0",
     "react": "19.1.0",

@@ -1,6 +1,6 @@
 # BanorteHack
 
-Base de un chat financiero para web y móvil, organizada según [Arquitectura.md](docs/Arquitectura.md). Incluye una demo local con datos ficticios. Las integraciones externas y las operaciones financieras reales están pendientes; consulta el [estado por componente](docs/architecture.md).
+Base de un chat financiero para web y móvil, organizada según [Arquitectura.md](docs/Arquitectura.md). Incluye login con Auth0 y voz con ElevenLabs. Los datos financieros siguen siendo ficticios y las operaciones reales están pendientes; consulta el [estado por componente](docs/architecture.md).
 
 ```text
 apps/
@@ -27,11 +27,14 @@ Desde la raíz:
 
 ```powershell
 npm ci
+if (-not (Test-Path services/api/.env)) { Copy-Item services/api/.env.example services/api/.env }
 python -m venv .venv
 .\.venv\Scripts\python -m pip install -e "./services/ai[dev]"
 ```
 
 En macOS/Linux, sustituir `.\.venv\Scripts\python` por `.venv/bin/python`.
+
+Configurar `services/api/.env` con [los pasos de Auth0 y ElevenLabs](docs/auth-and-voice.md), incluidos los Client ID para web y móvil. Para probar únicamente datos ficticios sin login ni voz, usar `AUTH_MODE=demo` en ese archivo.
 
 Ejecutar en tres terminales desde la raíz:
 
@@ -50,7 +53,7 @@ npm run dev:api
 npm run dev:web
 ```
 
-Abrir http://localhost:5173. La documentación de FastAPI está en http://localhost:8000/docs. El saldo y las series son ficticios; los botones generan vistas previas de 100 MXN y no modifican el saldo.
+Abrir http://localhost:5173 e iniciar sesión. La documentación de FastAPI está en http://localhost:8000/docs. El saldo y las series son ficticios; los botones generan vistas previas de 100 MXN y no modifican el saldo. El botón **Escuchar respuesta** usa ElevenLabs bajo demanda cuando la voz está configurada.
 
 ## Móvil
 
@@ -59,7 +62,7 @@ Copy-Item apps/mobile/.env.example apps/mobile/.env
 npm run dev:mobile
 ```
 
-Para un teléfono físico, configurar `EXPO_PUBLIC_API_URL` con la IP LAN de la computadora. Copiar `services/api/.env.example` a `services/api/.env` y cambiar `HOST=0.0.0.0` para permitir la conexión desde la red local. En el emulador Android, usar `http://10.0.2.2:3001`. Usar un development build o una versión de Expo Go compatible con SDK 54; la versión actual de Expo Go puede requerir un SDK más nuevo.
+Para un teléfono físico, configurar `EXPO_PUBLIC_API_URL` con la IP LAN de la computadora y `HOST=0.0.0.0` en `services/api/.env` para permitir la conexión desde la red local. En el emulador Android, usar `http://10.0.2.2:3001`. El login requiere un **development build** con el esquema `banortehack`; reconstruirlo con `npm run android --workspace @banortehack/mobile`. Expo Go no soporta este callback propio. Ver [configuración móvil](docs/auth-and-voice.md).
 
 ## Docker y datos
 
@@ -74,14 +77,14 @@ También se pueden iniciar solo las bases con `docker compose -f infra/docker/co
 
 Cada servicio incluye `.env.example`; no subir archivos `.env`. Node carga `services/api/.env`. FastAPI carga `.env` desde el directorio de ejecución; para usar `services/ai/.env` desde la raíz, agregar `--env-file services/ai/.env` al comando de Uvicorn.
 
-Las dependencias opcionales y el servidor MCP se habilitan así:
+Auth0 y ElevenLabs están conectados al gateway. La configuración pública llega a los clientes desde `/api/config`; las claves permanecen en el servidor. Las dependencias opcionales de IA y el servidor MCP se habilitan así:
 
 ```powershell
 .\.venv\Scripts\python -m pip install -e "./services/ai[integrations]"
 .\.venv\Scripts\python -m app.mcp.server
 ```
 
-El servidor MCP usa stdio y expone `get_financial_summary` con datos demo. Los conectores Gemini, PostgreSQL y MongoDB son puntos de partida; ElevenLabs, OAuth2, AES y Solana están documentados como trabajo pendiente.
+El servidor MCP usa stdio y expone `get_financial_summary` con datos demo. Los conectores Gemini, PostgreSQL y MongoDB son puntos de partida; AES y Solana siguen pendientes.
 
 ## Verificación
 
@@ -92,4 +95,4 @@ npm test
 .\.venv\Scripts\python -m pytest services/ai/tests
 ```
 
-Las pruebas cubren clasificación, validación de mensajes/montos, indisponibilidad de IA y bloqueo de ejecución real. El lockfile de npm fija las dependencias JS; las dependencias Python están acotadas en `pyproject.toml` y se deben bloquear antes de un despliegue reproducible.
+Las pruebas cubren clasificación, validación de mensajes/montos, indisponibilidad de IA, bloqueo de ejecución real, JWT inválidos, rutas protegidas y audio con proveedor simulado. El lockfile de npm fija las dependencias JS; las dependencias Python están acotadas en `pyproject.toml` y se deben bloquear antes de un despliegue reproducible.

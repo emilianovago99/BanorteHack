@@ -2,9 +2,10 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { once } from 'node:events';
 import { createApp } from '../src/server.js';
+import { loadConfig } from '../src/config.js';
 
 async function start(t, options) {
-  const server = createApp(options);
+  const server = createApp({ config: loadConfig({ AUTH_MODE: 'demo' }), ...options });
   server.listen(0, '127.0.0.1');
   await once(server, 'listening');
   t.after(() => new Promise(resolve => { server.close(resolve); server.closeAllConnections(); }));
