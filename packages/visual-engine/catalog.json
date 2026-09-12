@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "banortehack:finance-v1",
+  "title": "Catálogo financiero BanorteHack para A2UI v0.9",
+  "$defs": {
+    "theme": { "type": "object", "additionalProperties": false },
+    "binding": { "type": "object", "properties": { "path": { "type": "string", "pattern": "^/" } }, "required": ["path"], "additionalProperties": false },
+    "action": {
+      "type": "object",
+      "properties": { "event": {
+        "type": "object",
+        "properties": {
+          "name": { "enum": ["select_plan", "simulate_investment", "compare_plans", "simulate_debt", "show_transactions"] },
+          "context": { "type": "object" }
+        },
+        "required": ["name", "context"], "additionalProperties": false
+      } },
+      "required": ["event"], "additionalProperties": false
+    },
+    "anyComponent": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 100 },
+        "component": { "enum": ["Column", "Row", "Text", "Metric", "FinancialChart", "DataTable", "Button", "Notice", "PlanCard", "DebtCard", "Simulator", "BudgetList", "GoalList"] },
+        "children": { "type": "array", "items": { "type": "string" }, "maxItems": 100 },
+        "text": { "type": "string", "maxLength": 4000 },
+        "title": { "type": "string" }, "variant": { "type": "string" },
+        "label": { "type": "string" }, "value": { "type": "number" },
+        "format": { "enum": ["currency", "number", "percent"] },
+        "tone": { "type": "string" }, "detail": { "type": "string" },
+        "data": { "$ref": "#/$defs/binding" },
+        "chartType": { "enum": ["bar", "line", "doughnut"] },
+        "columns": { "type": "array", "items": { "type": "object", "properties": { "key": { "type": "string" }, "label": { "type": "string" }, "format": { "type": "string" } }, "required": ["key", "label"], "additionalProperties": false } },
+        "action": { "$ref": "#/$defs/action" }, "amount": { "type": "number" }
+      },
+      "required": ["id", "component"], "additionalProperties": false,
+      "allOf": [
+        { "if": { "properties": { "component": { "enum": ["Column", "Row"] } } }, "then": { "required": ["children"] } },
+        { "if": { "properties": { "component": { "enum": ["Text", "Notice", "Button"] } } }, "then": { "required": ["text"] } },
+        { "if": { "properties": { "component": { "const": "Metric" } } }, "then": { "required": ["label", "value"] } },
+        { "if": { "properties": { "component": { "enum": ["FinancialChart", "DataTable", "PlanCard", "DebtCard", "Simulator", "BudgetList", "GoalList"] } } }, "then": { "required": ["data"] } },
+        { "if": { "properties": { "component": { "enum": ["Button", "PlanCard", "DebtCard", "Simulator"] } } }, "then": { "required": ["action"] } },
+        { "if": { "properties": { "component": { "const": "FinancialChart" } } }, "then": { "required": ["title", "chartType"] } },
+        { "if": { "properties": { "component": { "const": "DataTable" } } }, "then": { "required": ["title", "columns"] } }
+      ]
+    }
+  },
+  "$ref": "#/$defs/anyComponent"
+}

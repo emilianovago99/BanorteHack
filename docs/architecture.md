@@ -1,51 +1,50 @@
-# Arquitectura de la base
+﻿# Arquitectura
 
-La especificación original se conserva en [Arquitectura.md](Arquitectura.md). Se eligieron LangChain, Chart.js y Expo entre las alternativas del documento.
+La especificación original se conserva en [Arquitectura.md](Arquitectura.md). La aplicación actual conecta Auth0, un dataset sintético amplio, herramientas MCP y superficies A2UI interactivas en la web.
 
 ```mermaid
 flowchart LR
-  Web[React web] --> API[API Node.js]
+  Web[React / renderer A2UI] --> API[Gateway Node.js / Auth0]
   Mobile[React Native / Expo] --> API
-  API --> AI[FastAPI / orquestación]
-  AI --> Demo[Repositorio de datos demo]
-  AI -. integración pendiente .-> Gemini[Gemini / LangChain]
-  AI -. cliente pendiente .-> MCP[Servidor MCP]
-  MCP -. repositorios pendientes .-> PG[PostgreSQL / Tiger Data]
-  MCP -. repositorios pendientes .-> Mongo[MongoDB Atlas]
-  API --> Preview[Vista previa de transacciones]
+  API --> AI[FastAPI / orquestador]
+  AI --> Planner[Gemini / intérprete local]
+  AI --> Client[Cliente MCP]
+  Client --> MCP[Servidor MCP stdio]
+  MCP --> Data[SQLite en memoria / CSV sintético]
+  MCP --> Sim[Proyecciones y amortización]
   API --> Voice[ElevenLabs]
-  Preview -. pendiente .-> Solana[Solana / REST]
-  Web --> Visual[Visual Engine / Chart.js]
+  AI --> Surface[Generador de superficies A2UI]
+  Surface --> Web
 ```
 
 | Capa | Ruta | Estado |
 | --- | --- | --- |
-| Web | `apps/web` | Saldo ficticio, chat conectado, gráfica/tabla y acciones de vista previa |
-| Móvil | `apps/mobile` | Saldo ficticio, chat, tabla textual y acciones de vista previa |
-| Gateway | `services/api` | HTTP, validación, proxy a IA y vistas previas sin movimientos |
-| IA | `services/ai/app` | Clasificador por reglas para deudas, ingresos e inversiones |
-| Gemini | `services/ai/app/providers` | Factory LangChain opcional; no conectada al chat |
-| MCP | `services/ai/app/mcp` | Servidor stdio con herramienta de consulta de datos ficticios; cliente pendiente |
-| Datos | `infra/database`, `services/ai/app/data` | Esquema inicial y factories de conexión; persistencia pendiente |
-| Visual | `packages/visual-engine` | Renderizador Chart.js; contrato interno, no protocolo A2UI completo |
-| Transacciones | `services/api/src/transactions` | Vista previa validada; ejecución real pendiente |
-| Voz / seguridad | `services/api/src/integrations` | ElevenLabs MP3 y validación Auth0 JWT; login/reproducción en web y móvil |
-| Infraestructura | `infra/docker`, `infra/vultr` | Compose local y guía para futuro despliegue |
+| Web | `apps/web` | Resumen, chat, movimientos, presupuestos, créditos, inversiones y suscripciones; diseño adaptable |
+| Móvil nativo | `apps/mobile` | Login, chat, voz y representación resumida de gráficas; catálogo A2UI completo pendiente |
+| Gateway | `services/api` | JWT Auth0, proxy de consultas/acciones/dashboard, voz; no ejecuta operaciones bancarias |
+| Planificador | `services/ai/app/planner.py` | Gemini produce un QueryPlan tipado; respaldo local si falta clave, red o cuota |
+| MCP | `services/ai/app/mcp` | Cliente y servidor reales por stdio; 11 herramientas invocadas durante consultas y acciones |
+| Datos | `datasets/synthetic`, `services/ai/app/data` | 11,602 movimientos reproducibles; SQLite en memoria, filtros y agregaciones |
+| A2UI | `services/ai/app/a2ui.py`, `packages/visual-engine` | Mensajes v0.9, catálogo financiero propio, Zod, Chart.js y controles interactivos |
+| Infraestructura | `infra` | Compose monta dataset de solo lectura; PostgreSQL/Mongo preparados, aún no usados por las consultas |
 
-## Decisiones y siguientes pasos
+## Herramientas MCP
 
-- Los datos financieros son ficticios. Para ejecutar sin cuentas externas, configurar explícitamente `AUTH_MODE=demo`; el modo habitual requiere Auth0. Agregar una clave Gemini por sí solo no cambia las respuestas del chat.
-- La demo grafica series predefinidas. Faltan proyecciones dinámicas, entradas multimodales y el cliente MCP en el orquestador.
-- Para A2UI se debe incorporar un renderer compatible y validar mensajes contra una versión del protocolo y un catálogo de componentes. El contrato actual de gráficas es específico del proyecto.
-- El documento menciona una referencia Figma, pero no contiene enlace ni archivo de diseño. La interfaz incluida es una base propia.
-- PostgreSQL almacena importes con `NUMERIC`, con extensión TimescaleDB para series temporales. Faltan repositorios, migraciones incrementales, agregados y políticas de compresión. MongoDB está reservado a perfiles y preferencias.
-- OAuth2 está integrado con Auth0; [configuración](auth-and-voice.md). Antes de usar datos reales, implementar persistencia y autorización por usuario, TLS, cifrado de campos sensibles con AES-GCM y llaves administradas, y auditoría. Estas protecciones adicionales siguen pendientes.
+`get_account_overview`, `get_cashflow`, `search_transactions`, `get_spending_breakdown`, `get_income_sources`, `get_budget_status`, `get_debts`, `simulate_debt_payoff`, `get_investment_plans`, `project_investment`, `get_subscriptions`.
 
-## Referencias técnicas
+El proceso MCP se inicia durante el ciclo de vida de FastAPI. Sus consultas usan importes en centavos, SQL parametrizado y una lista cerrada de campos de agrupación. El cliente registra nombres de herramientas en `tools_used` para inspeccionar el recorrido de cada respuesta.
 
-- [Compatibilidad Expo SDK 54](https://docs.expo.dev/versions/v54.0.0/)
-- [Vite](https://vite.dev/guide/)
-- [FastAPI](https://fastapi.tiangolo.com/tutorial/first-steps/)
+## Límites del prototipo
+
+Todos los usuarios ven el mismo perfil sintético de Alex. No hay integración bancaria ni transacciones reales. Los saldos de créditos e inversiones son fotografías ficticias de cierre; las proyecciones usan tasas hipotéticas. Ver [dataset y supuestos](../datasets/synthetic/README.md).
+
+La generación de pantallas usa reglas del orquestador a partir de un plan interpretado por Gemini; no es diseño arbitrario producido por el modelo. El transporte actual es HTTP por lotes y el catálogo A2UI es propio. Ver [protocolo y flujo interactivo](a2ui.md).
+
+PostgreSQL, MongoDB, Solana y cifrado de campos del esquema original siguen pendientes. Un sistema con datos personales necesitaría persistencia y autorización por usuario, auditoría y gestión de claves. La sesión habitual requiere Auth0; el modo sin login se habilita explícitamente con `AUTH_MODE=demo` y las pruebas de navegador lo usan en puertos aislados.
+
+## Referencias
+
 - [Gemini con LangChain](https://docs.langchain.com/oss/python/integrations/chat/google_generative_ai)
-- [Servidor MCP](https://modelcontextprotocol.io/docs/develop/build-server)
-- [Mensajes A2UI](https://a2ui.org/reference/messages/)
+- [MCP: servidor](https://modelcontextprotocol.io/docs/develop/build-server)
+- [A2UI v0.9](https://a2ui.org/specification/v0_9/server_to_client.json)
+- [Auth0 y ElevenLabs en este repo](auth-and-voice.md)

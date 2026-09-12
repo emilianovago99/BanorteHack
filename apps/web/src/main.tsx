@@ -1,7 +1,7 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import { App } from './App';
+import { FinancialWorkspace } from './FinancialWorkspace';
 import { SessionProvider } from './session';
-import './styles.css';
+import './workspace.css';
 
-createRoot(document.getElementById('root')!).render(<React.StrictMode><SessionProvider><App /></SessionProvider></React.StrictMode>);
+createRoot(document.getElementById('root')!).render(<React.StrictMode><SessionProvider><FinancialWorkspace /></SessionProvider></React.StrictMode>);

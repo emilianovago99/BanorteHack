@@ -4,10 +4,12 @@
   "private": true,
   "type": "module",
   "exports": { ".": "./src/index.tsx" },
+  "scripts": { "typecheck": "tsc --noEmit" },
   "dependencies": {
     "@banortehack/contracts": "0.1.0",
     "chart.js": "^4.5.0",
-    "react-chartjs-2": "^5.3.0"
+    "react-chartjs-2": "^5.3.0",
+    "zod": "^4.0.0"
   },
   "peerDependencies": { "react": "^19.1.0" }
 }

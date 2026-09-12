@@ -23,6 +23,11 @@ services:
     build:
       context: ../../services/ai
     ports: ["127.0.0.1:8000:8000"]
+    volumes:
+      - ../../datasets/synthetic:/data/financial:ro
+    env_file:
+      - path: ../../services/ai/.env
+        required: false
   api:
     build:
       context: ../..

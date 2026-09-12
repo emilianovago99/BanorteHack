@@ -1,0 +1,86 @@
+{
+  "synthetic": true,
+  "seed": 20260912,
+  "profile": "Alex · perfil de demostración",
+  "currency": "MXN",
+  "start_date": "2024-01-01",
+  "end_date": "2026-08-31",
+  "default_month": "2026-08",
+  "transaction_count": 11602,
+  "opening_balance_cents": 4200000,
+  "accounts": [
+    {
+      "id": "checking",
+      "name": "Cuenta de uso diario",
+      "type": "Débito",
+      "last4": "4821"
+    }
+  ],
+  "budgets": {
+    "Alimentos": 3500,
+    "Supermercado": 2800,
+    "Transporte": 1800,
+    "Compras": 1800,
+    "Entretenimiento": 1200,
+    "Salud": 1600,
+    "Educación": 1200,
+    "Mascotas": 800,
+    "Suscripciones": 450,
+    "Vivienda": 9000,
+    "Servicios": 1900,
+    "Créditos": 3900
+  },
+  "debts": [
+    {
+      "id": "card-classic",
+      "name": "Tarjeta Clásica",
+      "balance": 24500,
+      "annual_rate": 0.36,
+      "minimum_payment": 1800,
+      "due_day": 25,
+      "credit_limit": 60000
+    },
+    {
+      "id": "personal-loan",
+      "name": "Crédito personal",
+      "balance": 48000,
+      "annual_rate": 0.22,
+      "minimum_payment": 2100,
+      "due_day": 5,
+      "credit_limit": 90000
+    },
+    {
+      "id": "laptop",
+      "name": "Laptop · meses sin intereses",
+      "balance": 8400,
+      "annual_rate": 0,
+      "minimum_payment": 1400,
+      "due_day": 18,
+      "credit_limit": 16800
+    }
+  ],
+  "investments": [
+    {
+      "name": "Fondo de liquidez demo",
+      "value": 28000,
+      "principal": 26000
+    },
+    {
+      "name": "Portafolio diversificado demo",
+      "value": 46000,
+      "principal": 42000
+    }
+  ],
+  "goals": [
+    {
+      "name": "Fondo de emergencia",
+      "saved": 28000,
+      "target": 90000
+    },
+    {
+      "name": "Próximo viaje",
+      "saved": 12000,
+      "target": 35000
+    }
+  ]
+}

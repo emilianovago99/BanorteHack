@@ -16,7 +16,7 @@ async function token({ issuer = config.issuer, audience = config.audience, expir
     .setIssuer(issuer).setAudience(audience).setIssuedAt().setExpirationTime(expiry).sign(signer);
 }
 async function start(t, options = {}) {
-  const server = createApp({ config, verifyAccessToken: value => verifyToken(value, keys, config), ...options });
+  const server = createApp({ config, verifyAccessToken: value => verifyToken(value, keys, config), fetchAI: async () => new Response(JSON.stringify({ balance: 123, currency: 'MXN', mode: 'demo' })), ...options });
   server.listen(0, '127.0.0.1');
   await once(server, 'listening');
   t.after(() => new Promise(resolve => { server.close(resolve); server.closeAllConnections(); }));

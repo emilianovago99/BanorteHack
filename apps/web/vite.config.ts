@@ -1,8 +1,8 @@
 import { defineConfig, type ProxyOptions } from 'vite';
 
 const apiProxy: ProxyOptions = {
-  target: 'http://127.0.0.1:3001',
-  timeout: 4000,
+  target: process.env.API_PROXY_TARGET ?? 'http://127.0.0.1:3001',
+  timeout: 45000,
   configure: proxy => {
     proxy.on('error', (_error, _req, res) => {
       if ('writeHead' in res && !res.headersSent) {
@@ -15,5 +15,5 @@ const apiProxy: ProxyOptions = {
 
 export default defineConfig({
   esbuild: { jsx: 'automatic' },
-  server: { port: 5173, proxy: { '/api': apiProxy } }
+  server: { port: 5173, strictPort: true, proxy: { '/api': apiProxy } }
 });

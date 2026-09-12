@@ -1,6 +1,6 @@
 # BanorteHack
 
-Base de un chat financiero para web y móvil, organizada según [Arquitectura.md](docs/Arquitectura.md). Incluye login con Auth0 y voz con ElevenLabs. Los datos financieros siguen siendo ficticios y las operaciones reales están pendientes; consulta el [estado por componente](docs/architecture.md).
+Asistente financiero con 11,602 movimientos sintéticos, herramientas MCP y una interfaz web que cambia con cada pregunta mediante A2UI. Incluye login con Auth0 y voz con ElevenLabs. Consulta gastos por comercio, origen de ingresos, presupuestos, suscripciones y créditos; elige planes de inversión y ajusta sus proyecciones. Todo utiliza un perfil ficticio compartido y no ejecuta movimientos de dinero. Ver [arquitectura actual](docs/architecture.md).
 
 ```text
 apps/
@@ -17,6 +17,7 @@ infra/
   docker/                  Servicios locales con Docker Compose
   vultr/                   Guía de despliegue futuro
 docs/                      Arquitectura y decisiones
+datasets/synthetic/        CSV reproducible, perfil, créditos y presupuestos
 ```
 
 ## Inicio rápido
@@ -28,6 +29,7 @@ Desde la raíz:
 ```powershell
 npm ci
 if (-not (Test-Path services/api/.env)) { Copy-Item services/api/.env.example services/api/.env }
+if (-not (Test-Path services/ai/.env)) { Copy-Item services/ai/.env.example services/ai/.env }
 python -m venv .venv
 .\.venv\Scripts\python -m pip install -e "./services/ai[dev]"
 ```
@@ -40,7 +42,7 @@ Ejecutar en tres terminales desde la raíz:
 
 ```powershell
 # Terminal 1: IA
-.\.venv\Scripts\python -m uvicorn app.main:app --app-dir services/ai --reload --port 8000
+.\.venv\Scripts\python -m uvicorn app.main:app --app-dir services/ai --env-file services/ai/.env --reload --port 8000
 ```
 
 ```powershell
@@ -53,7 +55,17 @@ npm run dev:api
 npm run dev:web
 ```
 
-Abrir http://localhost:5173 e iniciar sesión. La documentación de FastAPI está en http://localhost:8000/docs. El saldo y las series son ficticios; los botones generan vistas previas de 100 MXN y no modifican el saldo. El botón **Escuchar respuesta** usa ElevenLabs bajo demanda cuando la voz está configurada.
+Abrir http://localhost:5173 e iniciar sesión. La documentación de FastAPI está en http://localhost:8000/docs. El botón **Escuchar respuesta** usa ElevenLabs bajo demanda cuando la voz está configurada.
+
+Prueba estas consultas:
+
+- “¿En qué comercios gasté más en agosto de 2026?”
+- “¿De dónde vienen mis ingresos?”
+- “Busca mis gastos en café en julio de 2025”.
+- “Muéstrame mis deudas” y luego **Simular abono de $500**.
+- “Quiero invertir $10000”, elige **Equilibrio** y pregunta “¿Y si aporto $2000 al mes?”.
+
+Las acciones generan nuevas superficies con estadísticas y gráficas. Puedes modificar capital, aportación y plazo en el simulador. Ver [flujo A2UI](docs/a2ui.md) y [campos/supuestos del dataset](datasets/synthetic/README.md).
 
 ## Móvil
 
@@ -77,14 +89,15 @@ También se pueden iniciar solo las bases con `docker compose -f infra/docker/co
 
 Cada servicio incluye `.env.example`; no subir archivos `.env`. Node carga `services/api/.env`. FastAPI carga `.env` desde el directorio de ejecución; para usar `services/ai/.env` desde la raíz, agregar `--env-file services/ai/.env` al comando de Uvicorn.
 
-Auth0 y ElevenLabs están conectados al gateway. La configuración pública llega a los clientes desde `/api/config`; las claves permanecen en el servidor. Las dependencias opcionales de IA y el servidor MCP se habilitan así:
+Auth0 y ElevenLabs están conectados al gateway. La configuración pública llega a los clientes desde `/api/config`; las claves permanecen en el servidor. Configura `GEMINI_API_KEY` y `GEMINI_MODEL` en `services/ai/.env` para interpretar preguntas con Gemini. `AI_MODE=local` fuerza el intérprete por reglas para pruebas sin proveedor. Si Gemini falla, el chat conserva consultas y simulaciones mediante el intérprete local.
+
+FastAPI inicia automáticamente su cliente y servidor MCP stdio. Para inspeccionar el servidor de forma independiente:
 
 ```powershell
-.\.venv\Scripts\python -m pip install -e "./services/ai[integrations]"
 .\.venv\Scripts\python -m app.mcp.server
 ```
 
-El servidor MCP usa stdio y expone `get_financial_summary` con datos demo. Los conectores Gemini, PostgreSQL y MongoDB son puntos de partida; AES y Solana siguen pendientes.
+El servidor expone 11 herramientas de consulta, presupuestos, créditos y proyecciones. Los conectores PostgreSQL/MongoDB y las operaciones con Solana siguen pendientes; las consultas actuales usan SQLite en memoria sobre el CSV incluido. Docker monta ese dataset como solo lectura.
 
 ## Verificación
 
@@ -93,6 +106,9 @@ npm run typecheck
 npm run build
 npm test
 .\.venv\Scripts\python -m pytest services/ai/tests
+npm run test:e2e --workspace @banortehack/web
 ```
 
-Las pruebas cubren clasificación, validación de mensajes/montos, indisponibilidad de IA, bloqueo de ejecución real, JWT inválidos, rutas protegidas y audio con proveedor simulado. El lockfile de npm fija las dependencias JS; las dependencias Python están acotadas en `pyproject.toml` y se deben bloquear antes de un despliegue reproducible.
+Las pruebas cubren conciliación del CSV, amortización, proyecciones, consultas MCP, acciones A2UI, parámetros inválidos, JWT y audio. Playwright levanta servicios aislados en 8001/3002/5180 y usa Edge en Windows; en otros sistemas instala Chromium con `npx playwright install chromium`. Los recorridos de navegador verifican gráficas, selección de planes, aportaciones desde el chat y adaptación a teléfonos. Las pruebas usan datos locales y no consumen Gemini ni ElevenLabs.
+
+El lockfile de npm fija las dependencias JS; las dependencias Python están acotadas en `pyproject.toml` y se deben bloquear antes de un despliegue reproducible.

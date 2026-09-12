@@ -9,7 +9,7 @@ async function readJson(request) {
   let size = 0;
   for await (const chunk of request) {
     size += chunk.length;
-    if (size > 16_384) throw new Error('Solicitud demasiado grande.');
+    if (size > 65_536) throw new Error('Solicitud demasiado grande.');
     chunks.push(chunk);
   }
   const parsed = JSON.parse(Buffer.concat(chunks).toString('utf8'));
@@ -23,7 +23,8 @@ export function createApp({
   config = loadConfig(),
   verifyAccessToken = config.authMode === 'required' ? createTokenVerifier(config) : null,
   synthesize = createSpeechService(config),
-  allowSpeech = createSpeechLimiter()
+  allowSpeech = createSpeechLimiter(),
+  fetchAI = fetch
 } = {}) {
   return createServer(async (request, response) => {
     response.setHeader('Content-Type', 'application/json; charset=utf-8');
@@ -50,9 +51,15 @@ export function createApp({
         return send(401, { error: 'Inicia sesión de nuevo para continuar.' });
       }
     }
-    if (request.method === 'GET' && path === '/api/account') return send(200, { balance: 24500, currency: 'MXN', mode: 'demo' });
+    if (request.method === 'GET' && ['/api/account', '/api/dashboard'].includes(path)) {
+      try {
+        const upstream = await fetchAI(`${aiUrl}/${path.split('/').pop()}`, { signal: AbortSignal.timeout(15000) });
+        if (!upstream.ok) throw new Error();
+        return send(200, await upstream.json());
+      } catch { return send(502, { error: 'No se pudo consultar el dataset. Verifica el servicio de IA.' }); }
+    }
     if (request.method === 'POST' && path === '/api/transactions') return send(501, { error: 'Las transacciones reales aún no están implementadas.' });
-    if (request.method !== 'POST' || !['/api/chat', '/api/transactions/preview', '/api/speech'].includes(path)) return send(404, { error: 'Ruta no encontrada.' });
+    if (request.method !== 'POST' || !['/api/chat', '/api/actions', '/api/transactions/preview', '/api/speech'].includes(path)) return send(404, { error: 'Ruta no encontrada.' });
     let body;
     try { body = await readJson(request); }
     catch { return send(400, { error: 'JSON inválido o solicitud demasiado grande.' }); }
@@ -75,12 +82,13 @@ export function createApp({
       try { return send(200, previewTransaction(body)); }
       catch (error) { return send(400, { error: error.message }); }
     }
-    if (typeof body.message !== 'string' || !body.message.trim() || body.message.length > 2000) return send(400, { error: 'El mensaje debe contener entre 1 y 2000 caracteres.' });
+    if (path === '/api/chat' && (typeof body.message !== 'string' || !body.message.trim() || body.message.length > 2000)) return send(400, { error: 'El mensaje debe contener entre 1 y 2000 caracteres.' });
     try {
-      const upstream = await fetch(`${aiUrl}/chat`, {
+      const upstream = await fetchAI(`${aiUrl}/${path === '/api/actions' ? 'actions' : 'chat'}`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: body.message.trim() }), signal: AbortSignal.timeout(15_000)
+        body: JSON.stringify(path === '/api/actions' ? body : { message: body.message.trim(), history: body.history ?? [], simulation: body.simulation ?? null }), signal: AbortSignal.timeout(30_000)
       });
+      if (upstream.status === 422) return send(400, { error: 'Revisa los parámetros de la consulta o simulación.' });
       if (!upstream.ok) throw new Error('AI unavailable');
       return send(200, await upstream.json());
     } catch { return send(502, { error: 'El servicio de IA no está disponible.' }); }
