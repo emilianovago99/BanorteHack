@@ -1,0 +1,9 @@
+{
+  "name": "@banortehack/mobile",
+  "version": "0.1.0",
+  "private": true,
+  "main": "index.ts",
+  "scripts": { "start": "expo start", "android": "expo run:android", "ios": "expo run:ios", "typecheck": "tsc --noEmit" },
+  "dependencies": { "@banortehack/contracts": "0.1.0", "expo": "~54.0.37", "react": "19.1.0", "react-native": "0.81.5" },
+  "devDependencies": { "@types/react": "~19.1.10" }
+}
