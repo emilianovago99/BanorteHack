@@ -67,3 +67,22 @@ def test_month_and_merchant_breakdown(client, monkeypatch):
     assert result["domain"] == "gastos"
     assert "get_spending_breakdown" in result["tools_used"]
     assert "Residencial Encino" in result["message"]
+
+
+def test_customize_active_surface_through_mcp(client, monkeypatch):
+    monkeypatch.setenv("AI_MODE", "local")
+    original = client.post("/chat", json={"message": "Gastos de julio 2025"}).json()
+    result = client.post("/chat", json={"message": "Orden ascendente por monto y color azul", "current_view": original})
+    assert result.status_code == 200
+    updated = result.json()
+    assert updated["domain"] == "gastos"
+    assert updated["period"] == "2025-07"
+    assert updated["workspace_operation"] == "update"
+    assert updated["tools_used"] == ["customize_financial_view"]
+    assert updated["visualization"]["values"] == sorted(original["visualization"]["values"])
+    assert sum(updated["visualization"]["values"]) == pytest.approx(sum(original["visualization"]["values"]))
+    nodes = updated["a2ui"][2]["updateComponents"]["components"]
+    assert all(node["palette"][0] == "#2563eb" for node in nodes if node["component"] == "FinancialChart")
+    copy = client.post("/chat", json={"message": "Nueva pestaña en orden descendente", "current_view": updated}).json()
+    assert copy["workspace_operation"] == "create"
+    assert copy["visualization"]["values"] == sorted(original["visualization"]["values"], reverse=True)

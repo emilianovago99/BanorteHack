@@ -8,8 +8,8 @@ export { A2UIRenderer } from './renderer';
 
 const colors = ['#df0030', '#163c40', '#e8a05a', '#78948c', '#b889ab', '#85a8c4', '#727c93', '#d1bda0', '#aeccd0', '#d77776', '#8b9375', '#b1b8c2'];
 
-export function DatasetChart({ title, labels, series, type = 'bar' }: { title: string; labels: string[]; series: { label: string; values: number[] }[]; type?: 'bar' | 'line' | 'doughnut' }) {
-  const data = { labels, datasets: series.map((item, index) => ({ label: item.label, data: item.values, backgroundColor: type === 'doughnut' ? colors : colors[index % colors.length], borderColor: colors[index % colors.length], borderWidth: type === 'line' ? 2 : 0, borderRadius: type === 'bar' ? 4 : 0, pointRadius: labels.length > 24 ? 0 : 2, tension: .28 })) };
+export function DatasetChart({ title, labels, series, type = 'bar', palette = colors }: { title: string; labels: string[]; series: { label: string; values: number[] }[]; type?: 'bar' | 'line' | 'doughnut'; palette?: string[] }) {
+  const data = { labels, datasets: series.map((item, index) => ({ label: item.label, data: item.values, backgroundColor: type === 'doughnut' ? palette : palette[index % palette.length], borderColor: palette[index % palette.length], borderWidth: type === 'line' ? 2 : 0, borderRadius: type === 'bar' ? 4 : 0, pointRadius: labels.length > 24 ? 0 : 2, tension: .28 })) };
   const options = { responsive: true, animation: false as const, maintainAspectRatio: false, plugins: { legend: { display: true, position: 'bottom' as const, labels: { usePointStyle: true, boxWidth: 8, padding: 18 } } } };
   return <section className="finance-panel"><div className="panel-heading"><h3>{title}</h3><span className="panel-unit">{type === 'doughnut' && series[0]?.label === '%' ? 'Distribución' : 'MXN'}</span></div>
     {labels.length ? <div className="chart-container">{type === 'line' ? <Line data={data} options={options} /> : type === 'doughnut' ? <Doughnut data={data} options={options} /> : <Bar data={data} options={options} />}</div> : <p className="empty-state">No hay movimientos para este periodo.</p>}

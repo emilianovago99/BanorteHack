@@ -69,6 +69,24 @@ async def render_plan(plan, tools, interpretation="local"):
 
 
 async def answer(request, tools):
+    from app.presentation import presentation_options
+    from app.planner import normalize
+    options = presentation_options(request.message)
+    if options and request.current_view:
+        current = request.current_view.model_copy(deep=True)
+        result = await tools.call("customize_financial_view", messages=current.a2ui, **options)
+        current.a2ui = result["a2ui"]
+        current.tools_used = tools.calls
+        current.workspace_operation = "create" if any(word in normalize(request.message) for word in ("nueva pestana", "otra pestana", "nueva vista")) else "update"
+        current.message = "Actualicé la vista con los ajustes solicitados. El orden se aplica a los registros visibles." if result["changed"] else "No encontré un componente compatible. Puedes indicar el título entre comillas y pedir orden, color o tipo de gráfica."
+        # Refresh the compatibility chart used by mobile clients as well.
+        model = next(m["updateDataModel"]["value"] for m in current.a2ui if "updateDataModel" in m)
+        nodes = next(m["updateComponents"]["components"] for m in current.a2ui if "updateComponents" in m)
+        chart = next((n for n in nodes if n["component"] == "FinancialChart"), None)
+        if chart:
+            data = model[chart["data"]["path"].lstrip("/")]
+            current.visualization = Visualization(type=chart["chartType"], title=chart["title"], labels=data["labels"], values=data["series"][0]["values"])
+        return current
     plan, interpretation = await plan_query(request)
     if plan.intent == "inversiones" and plan.plan_id:
         params = SimulationInput(plan_id=plan.plan_id, amount=plan.amount, months=plan.months, monthly_contribution=plan.monthly_contribution)

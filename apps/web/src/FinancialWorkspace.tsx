@@ -19,10 +19,15 @@ function Icon({ name }: { name: string }) {
   return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={paths[name] ?? paths.sparkle} /></svg>;
 }
 
+type SavedTab = { id: string; label: string; view: ChatResponse };
+
 type Message = { role: 'user' | 'assistant'; content: string; id: number };
 
 export function FinancialWorkspace() {
-  const { request, logout, voiceEnabled, demo } = useSession();
+  const { request, logout, voiceEnabled } = useSession();
+  const [tabs, setTabs] = useState<SavedTab[]>([]);
+  const [activeTab, setActiveTab] = useState('resumen');
+  const [mobileChat, setMobileChat] = useState(false);
   const [account, setAccount] = useState<AccountSummary>();
   const [view, setView] = useState<ChatResponse>();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -38,22 +43,27 @@ export function FinancialWorkspace() {
     try {
       const [summary, dashboard] = await Promise.all([request('/api/account').then(r => r.json()), request('/api/dashboard').then(r => r.json())]);
       if (!Array.isArray(dashboard.a2ui)) throw new Error('La respuesta no contiene una vista válida.');
-      setAccount(summary); setView(dashboard);
+      setAccount(summary); setView(dashboard); setActiveTab('resumen');
+      setTabs(previous => [...previous.filter(tab => tab.id !== 'resumen'), { id: 'resumen', label: 'Mi resumen', view: dashboard }]);
     } catch (error) { setError(error instanceof Error ? error.message : 'No se pudo cargar el resumen.'); }
   }, [request]);
   useEffect(() => { void loadDashboard(); }, [loadDashboard]);
   useEffect(() => { chatEnd.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }, [messages, busy]);
 
-  async function query(text: string, action?: UIAction) {
+  async function query(text: string, action?: UIAction, sectionId?: string) {
     if (inFlight.current || !text.trim()) return;
     inFlight.current = true; setBusy(true); setError('');
     const history = messages.slice(-6).map(({ role, content }) => ({ role, content: content.slice(0, 2000) }));
     setMessages(previous => [...previous, { id: ++messageId.current, role: 'user', content: text }]);
     try {
-      const response = await request(action ? '/api/actions' : '/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(action ?? { message: text, history, simulation: view?.simulation }) });
+      const response = await request(action ? '/api/actions' : '/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(action ?? { message: text, history, simulation: view?.simulation, current_view: view }) });
       const next: ChatResponse = await response.json();
       if (!Array.isArray(next.a2ui)) throw new Error('No se pudo generar la vista. Intenta otra consulta.');
-      setView(next);
+      const updating = Boolean(action || next.workspace_operation === 'update');
+      const id = sectionId ?? (updating ? activeTab : `tab-${++messageId.current}`);
+      const label = sectionId ? sections.find(section => section.id === sectionId)!.label : updating ? tabs.find(tab => tab.id === activeTab)?.label ?? text.slice(0, 48) : text.slice(0, 48);
+      setTabs(previous => previous.some(tab => tab.id === id) ? previous.map(tab => tab.id === id ? { id, label, view: next } : tab) : [...previous, { id, label, view: next }]);
+      setActiveTab(id); setView(next);
       setMessages(previous => [...previous, { id: ++messageId.current, role: 'assistant', content: next.message }]);
       setPrompt('');
     } catch (error) { setError(error instanceof Error ? error.message : 'No se pudo completar la consulta.'); }
@@ -67,17 +77,18 @@ export function FinancialWorkspace() {
   function send(event: FormEvent) { event.preventDefault(); void query(prompt); }
   const domain = view?.domain ?? 'resumen';
 
-  return <div className="workspace-shell">
+  return <div className={`workspace-shell ${mobileChat ? 'mobile-chat-open' : ''}`}>
     <aside className="sidebar">
       <a className="brand" href="/" aria-label="BanorteHack inicio"><span className="brand-mark">B</span><span>BANORTE<span className="brand-light">HACK</span></span></a>
       <div className="workspace-label">TU ESPACIO FINANCIERO</div>
-      <nav aria-label="Navegación principal">{sections.map(section => <button key={section.id} className={`nav-item ${domain === section.id ? 'active' : ''}`} disabled={busy} onClick={() => section.id === 'resumen' ? void loadDashboard() : void query(section.prompt)}><Icon name={section.icon} /><span>{section.label}</span>{section.id === 'inversiones' && <span className="new-dot" />}</button>)}</nav>
+      <nav aria-label="Navegación principal">{sections.map(section => <button key={section.id} className={`nav-item ${activeTab === section.id ? 'active' : ''}`} disabled={busy} title={section.label} onClick={() => { const saved = tabs.find(tab => tab.id === section.id); if (saved) { setView(saved.view); setActiveTab(saved.id); } else if (section.id === 'resumen') void loadDashboard(); else void query(section.prompt, undefined, section.id); }}><Icon name={section.icon} /><span>{section.label}</span>{section.id === 'inversiones' && <span className="new-dot" />}</button>)}</nav>
+      {tabs.some(tab => tab.id.startsWith('tab-')) && <nav className="custom-tabs" aria-label="Vistas creadas"><span className="workspace-label">TUS VISTAS</span>{tabs.filter(tab => tab.id.startsWith('tab-')).map(tab => <button key={tab.id} disabled={busy} title={tab.label} aria-current={activeTab === tab.id ? 'page' : undefined} className={`nav-item ${activeTab === tab.id ? 'active' : ''}`} onClick={() => { setView(tab.view); setActiveTab(tab.id); }}><Icon name="sparkle" /><span>{tab.label}</span></button>)}</nav>}
       <div className="sidebar-tip"><Icon name="sparkle" /><strong>Más claridad.<br />Mejores decisiones.</strong><p>Pregunta, compara y explora antes de dar el siguiente paso.</p></div>
-      <div className="sidebar-profile"><div className="avatar">AX</div><div><strong>Perfil de Alex</strong><small>Dataset sintético</small></div>{!demo && <button className="icon-button" aria-label="Cerrar sesión" title="Cerrar sesión" onClick={logout}><Icon name="logout" /></button>}</div>
+      <div className="sidebar-profile"><div className="avatar">AX</div><div><strong>Perfil de Alex</strong><small>Dataset sintético</small></div>{<button className="icon-button" aria-label="Cerrar sesión" title="Cerrar sesión" onClick={logout}><Icon name="logout" /></button>}</div>
     </aside>
 
     <div className="workspace-main">
-      <header className="workspace-topbar"><div className="breadcrumb">Mi espacio <span>/</span> <strong>{sections.find(item => item.id === domain)?.label ?? domain}</strong></div><div className="topbar-right"><span className="status-dot" />Entorno de demostración<span className="topbar-divider" /><span>MXN</span></div></header>
+      <header className="workspace-topbar"><div className="breadcrumb">Mi espacio <span>/</span> <strong>{tabs.find(tab => tab.id === activeTab)?.label ?? domain}</strong></div><div className="topbar-right"><span className="status-dot" />Entorno de demostración<span className="topbar-divider" /><span>MXN</span></div></header>
       <main className="financial-content">
         <div className="page-intro"><div><span className="eyebrow">FINANZAS QUE SE ENTIENDEN</span><h1>{titles[domain]}</h1><p>Todos tus movimientos, conectados en una conversación.</p></div><span className="period-pill"><span aria-hidden="true">▦</span> {view?.period ?? account?.month ?? '2026-08'} · cierre mensual</span></div>
         <div className="dataset-strip"><span className="dataset-badge">SINTÉTICO</span><span>{account?.dataset?.transaction_count.toLocaleString('es-MX') ?? '11,602'} movimientos · enero 2024 a agosto 2026</span><span className="dataset-note">Sin conexión con cuentas bancarias reales</span></div>
@@ -90,7 +101,8 @@ export function FinancialWorkspace() {
       </main>
     </div>
 
-    <aside className="assistant-panel" aria-label="Asistente financiero">
+    <button className="mobile-chat-toggle" aria-expanded={mobileChat} aria-controls="financial-assistant" onClick={() => setMobileChat(open => !open)}>{mobileChat ? 'Volver a mi vista' : 'Conversar con Norte'}</button>
+    <aside id="financial-assistant" className="assistant-panel" aria-label="Asistente financiero">
       <div className="assistant-heading"><div className="assistant-symbol"><Icon name="sparkle" /></div><div><strong>Norte</strong><span>Tu asistente financiero</span></div><span className="assistant-live">●</span></div>
       <div className="conversation" aria-live="polite"><div className="assistant-welcome"><span className="eyebrow">HABLEMOS DE TU DINERO</span><h2>¿Qué te gustaría<br />entender hoy?</h2><p>Puedo encontrar patrones en tus gastos, revisar tus créditos o ayudarte a explorar un plan de inversión.</p></div>
         <div className="suggested-questions">{['¿En qué gasté más en agosto?', '¿De dónde vienen mis ingresos?', 'Quiero invertir $10000'].map(text => <button key={text} disabled={busy} onClick={() => void query(text)}>{text}<span>↗</span></button>)}</div>

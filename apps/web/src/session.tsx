@@ -26,6 +26,10 @@ async function checkResponse(response: Response) {
 
 const demoRequest: Session['request'] = async (path, init) => checkResponse(await fetch(path, init));
 
+function LoginScreen({ demo = false, onLogin, error }: { demo?: boolean; onLogin: () => void; error?: boolean }) {
+  return <div className="login-shell"><section className="login-story"><a className="brand" href="/"><span className="brand-mark">B</span><span>BANORTE<span className="brand-light">HACK</span></span></a><div><span className="eyebrow">TU ESPACIO FINANCIERO</span><h1>Tu dinero, con más claridad.</h1><p>Pregunta, descubre y construye una vista de tus finanzas a tu medida.</p><div className="login-preview"><span>Una conversación. Nuevas perspectivas.</span><strong>Todo empieza contigo.</strong><div className="login-bars" aria-hidden="true"><i /><i /><i /><i /><i /></div></div></div><small>Prototipo con datos sintéticos</small></section><main className="login-card"><span className="eyebrow">BIENVENIDO A NORTE</span><h2>Inicia sesión</h2><p>Un solo espacio para entender tus movimientos, explorar escenarios y tomar mejores decisiones.</p>{error && <p role="alert">No se pudo iniciar sesión. Intenta de nuevo.</p>}<button onClick={onLogin}>{demo ? 'Entrar a la demostración' : 'Iniciar sesión'}</button><small>{demo ? 'Explora el perfil ficticio de Alex, sin credenciales bancarias.' : 'Continúa con tu cuenta mediante el acceso seguro.'}</small></main></div>;
+}
+
 function AuthenticatedSession({ config, children }: { config: PublicConfig; children: ReactNode }) {
   const { isLoading, isAuthenticated, error, loginWithRedirect, logout, getAccessTokenSilently } = useAuth0();
   const [expired, setExpired] = useState(false);
@@ -42,11 +46,7 @@ function AuthenticatedSession({ config, children }: { config: PublicConfig; chil
   }, [getAccessTokenSilently]);
 
   if (isLoading) return <main><p role="status">Verificando tu sesión…</p></main>;
-  if (!isAuthenticated || expired || error) return <main>
-    <h1>BanorteHack</h1><p>Inicia sesión para conversar sobre tus finanzas.</p>
-    {(error || loginError) && <p role="alert">No se pudo iniciar sesión. Intenta de nuevo.</p>}
-    <button onClick={() => { setLoginError(false); void loginWithRedirect({ authorizationParams: { prompt: 'login' } }).catch(() => setLoginError(true)); }}>Iniciar sesión</button>
-  </main>;
+  if (!isAuthenticated || expired || error) return <LoginScreen error={Boolean(error || loginError)} onLogin={() => { setLoginError(false); void loginWithRedirect({ authorizationParams: { prompt: 'login' } }).catch(() => setLoginError(true)); }} />;
 
   return <SessionContext.Provider value={{ request, voiceEnabled: config.voice.enabled, demo: false,
     logout: () => { setExpired(true); void logout({ logoutParams: { returnTo: window.location.origin } }).catch(() => setLoginError(true)); }
@@ -56,6 +56,7 @@ function AuthenticatedSession({ config, children }: { config: PublicConfig; chil
 export function SessionProvider({ children }: { children: ReactNode }) {
   const [config, setConfig] = useState<PublicConfig>();
   const [failed, setFailed] = useState(false);
+  const [demoEntered, setDemoEntered] = useState(false);
   useEffect(() => {
     const controller = new AbortController();
     const timer = window.setTimeout(() => controller.abort(), 5000);
@@ -70,7 +71,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   }, []);
   if (failed) return <main><p role="alert">No se pudo conectar al servicio. Arranca la API con <code>npm run dev:api</code> y recarga.</p><button onClick={() => window.location.reload()}>Reintentar</button></main>;
   if (!config) return <main><p role="status">Conectando…</p></main>;
-  if (config.auth.mode === 'demo') return <SessionContext.Provider value={{ request: demoRequest, logout: () => {}, voiceEnabled: false, demo: true }}>{children}</SessionContext.Provider>;
+  if (config.auth.mode === 'demo' && !demoEntered) return <LoginScreen demo onLogin={() => setDemoEntered(true)} />;
+  if (config.auth.mode === 'demo') return <SessionContext.Provider value={{ request: demoRequest, logout: () => setDemoEntered(false), voiceEnabled: false, demo: true }}>{children}</SessionContext.Provider>;
   if (!config.auth.webClientId) return <main><p role="status">El inicio de sesión aún no está configurado.</p></main>;
   return <Auth0Provider domain={new URL(config.auth.issuer).host} clientId={config.auth.webClientId}
     authorizationParams={{ redirect_uri: window.location.origin, audience: config.auth.audience, scope: 'openid profile email' }}

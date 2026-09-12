@@ -16,6 +16,7 @@ export interface ChatResponse {
   visualization: Visualization;
   a2ui: unknown[];
   surface_id: string;
+  workspace_operation?: 'create' | 'update';
   tools_used: string[];
   interpretation: 'gemini' | 'local';
   source: string;

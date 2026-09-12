@@ -72,5 +72,15 @@ def get_subscriptions(month: str | None = None) -> dict:
     return repository().subscriptions(month)
 
 
+@mcp.tool()
+def customize_financial_view(messages: list[dict], order: Literal["asc", "desc"] | None = None, color: str | None = None, chart_type: Literal["bar", "line", "doughnut"] | None = None, sort_key: str | None = None, target: str | None = None) -> dict:
+    """Adjust ordering, chart type or palette of the active financial surface without changing amounts."""
+    import re
+    from app.presentation import customize_surface, PALETTES
+    if color and color not in PALETTES and not re.fullmatch(r"#[0-9a-fA-F]{6}", color):
+        raise ValueError("Color inválido")
+    return customize_surface(messages, order, color, chart_type, sort_key, target)
+
+
 if __name__ == "__main__":
     mcp.run(transport="stdio")

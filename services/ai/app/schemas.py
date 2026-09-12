@@ -14,6 +14,7 @@ class ChatRequest(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True)
     message: str = Field(min_length=1, max_length=2000)
     history: list[ChatTurn] = Field(default_factory=list, max_length=8)
+    current_view: ChatResponse | None = None
     simulation: SimulationInput | None = None
 
 
@@ -43,6 +44,7 @@ class ChatResponse(BaseModel):
     visualization: Visualization
     a2ui: list[dict]
     surface_id: str
+    workspace_operation: Literal["create", "update"] = "create"
     tools_used: list[str] = Field(default_factory=list)
     interpretation: Literal["gemini", "local"] = "local"
     source: str = "Dataset sintético · 2024–2026"

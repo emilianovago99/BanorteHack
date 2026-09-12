@@ -86,7 +86,7 @@ export function createApp({
     try {
       const upstream = await fetchAI(`${aiUrl}/${path === '/api/actions' ? 'actions' : 'chat'}`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(path === '/api/actions' ? body : { message: body.message.trim(), history: body.history ?? [], simulation: body.simulation ?? null }), signal: AbortSignal.timeout(30_000)
+        body: JSON.stringify(path === '/api/actions' ? body : { message: body.message.trim(), history: body.history ?? [], simulation: body.simulation ?? null, current_view: body.current_view ?? null }), signal: AbortSignal.timeout(30_000)
       });
       if (upstream.status === 422) return send(400, { error: 'Revisa los parámetros de la consulta o simulación.' });
       if (!upstream.ok) throw new Error('AI unavailable');
