@@ -4,7 +4,10 @@ import type { Visualization } from '@banortehack/contracts';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
 
-export function FinancialChart({ data }: { data: Visualization }) {
+export function FinancialChart({ data }: { data?: Visualization | null }) {
+  if (!data?.labels?.length || !data.values || data.labels.length !== data.values.length) {
+    return null;
+  }
   return <figure>
     <figcaption>{data.title}</figcaption>
     <Bar data={{ labels: data.labels, datasets: [{ label: 'MXN', data: data.values, backgroundColor: '#eb0029' }] }}

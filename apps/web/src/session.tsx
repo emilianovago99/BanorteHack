@@ -58,11 +58,17 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [failed, setFailed] = useState(false);
   useEffect(() => {
     const controller = new AbortController();
-    fetch('/api/config', { signal: controller.signal }).then(checkResponse).then(response => response.json()).then(setConfig)
-      .catch(() => { if (!controller.signal.aborted) setFailed(true); });
-    return () => controller.abort();
+    const timer = window.setTimeout(() => controller.abort(), 5000);
+    let active = true;
+    fetch('/api/config', { signal: controller.signal })
+      .then(checkResponse)
+      .then(response => response.json())
+      .then(data => { if (active) setConfig(data); })
+      .catch(() => { if (active) setFailed(true); })
+      .finally(() => window.clearTimeout(timer));
+    return () => { active = false; window.clearTimeout(timer); controller.abort(); };
   }, []);
-  if (failed) return <main><p role="alert">No se pudo conectar al servicio.</p><button onClick={() => window.location.reload()}>Reintentar</button></main>;
+  if (failed) return <main><p role="alert">No se pudo conectar al servicio. Arranca la API con <code>npm run dev:api</code> y recarga.</p><button onClick={() => window.location.reload()}>Reintentar</button></main>;
   if (!config) return <main><p role="status">Conectando…</p></main>;
   if (config.auth.mode === 'demo') return <SessionContext.Provider value={{ request: demoRequest, logout: () => {}, voiceEnabled: false, demo: true }}>{children}</SessionContext.Provider>;
   if (!config.auth.webClientId) return <main><p role="status">El inicio de sesión aún no está configurado.</p></main>;
