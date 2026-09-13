@@ -2,7 +2,7 @@
 
 Cada consulta de la web produce una nueva superficie a partir de resultados de herramientas MCP. Gemini interpreta intención y parámetros; el orquestador decide qué herramientas invocar y compone los mensajes de interfaz. Los importes y las series siempre se calculan desde el dataset o mediante fórmulas de simulación. El modelo no escribe HTML, JavaScript, SQL ni importes para mostrar.
 
-Se implementa un subconjunto de los [mensajes A2UI v0.9](https://a2ui.org/specification/v0_9/server_to_client.json), con catálogo propio `banortehack:finance-v1`. El esquema de componentes está en [`catalog.json`](../packages/visual-engine/catalog.json). No es el catálogo estándar ni una implementación completa de A2UI/A2A.
+Se implementa un subconjunto de los [mensajes A2UI v0.9](https://a2ui.org/specification/v0_9/server_to_client.json), con catálogo propio `lazy-bank:finance-v1`. El esquema de componentes está en [`catalog.json`](../packages/visual-engine/catalog.json). No es el catálogo estándar ni una implementación completa de A2UI/A2A.
 
 ## Flujo
 

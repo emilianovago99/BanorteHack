@@ -14,4 +14,4 @@ if ($LASTEXITCODE -ne 0) { throw 'No se pudo conectar la API mediante USB.' }
 & $adbPath -s $Device reverse tcp:8081 tcp:8081
 if ($LASTEXITCODE -ne 0) { throw 'No se pudo conectar Metro mediante USB.' }
 Write-Host 'USB conectado. Mantén la API (3001), IA (8000) y Metro (8081) encendidos.'
-Write-Host 'Desde la raíz: npm run dev:mobile. Para compilar: npm run android --workspace @banortehack/mobile.'
+Write-Host 'Desde la raíz: npm run dev:mobile. Para compilar: npm run android --workspace @lazy-bank/mobile.'

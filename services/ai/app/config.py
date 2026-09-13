@@ -7,6 +7,6 @@ class Settings(BaseSettings):
     gemini_api_key: str = ""
     gemini_model: str = "gemini-3.6-flash"
     ai_mode: Literal["auto", "local", "gemini"] = "auto"
-    database_url: str = "postgresql://banortehack:local-development-only@localhost:5432/banortehack"
+    database_url: str = "postgresql://lazy-bank:local-development-only@localhost:5432/lazy-bank"
     mongodb_uri: str = "mongodb://localhost:27017"
-    mongodb_database: str = "banortehack"
+    mongodb_database: str = "lazy-bank"

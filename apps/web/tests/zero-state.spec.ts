@@ -67,7 +67,7 @@ test('recuperar una superficie vuelve a cero sin dashboard ni pérdida de contex
   await page.route('**/api/chat', async route => {
     const current = route.request().postDataJSON().current_view;
     await route.fulfill({ json: { ...current, a2ui: [
-      { version: 'v0.9', createSurface: { surfaceId: 'invalid', catalogId: 'banortehack:finance-v1' } },
+      { version: 'v0.9', createSurface: { surfaceId: 'invalid', catalogId: 'lazy-bank:finance-v1' } },
       { version: 'v0.9', updateComponents: { surfaceId: 'invalid', components: [{ id: 'root', component: 'UnknownWidget' }] } }
     ] } });
   }, { times: 1 });
@@ -127,7 +127,7 @@ test('historial invisible conserva los últimos seis mensajes y limita cada cont
       visualization: { type: 'bar', title: 'Prueba', labels: [], values: [] },
       surface_id: `test-${turn}`,
       a2ui: [
-        { version: 'v0.9', createSurface: { surfaceId: `test-${turn}`, catalogId: 'banortehack:finance-v1' } },
+        { version: 'v0.9', createSurface: { surfaceId: `test-${turn}`, catalogId: 'lazy-bank:finance-v1' } },
         { version: 'v0.9', updateDataModel: { surfaceId: `test-${turn}`, path: '/', value: {} } },
         { version: 'v0.9', updateComponents: { surfaceId: `test-${turn}`, components: [
           { id: 'root', component: 'Column', children: ['heading'] },
@@ -176,4 +176,17 @@ test('la simulación genera un botón A2UI de confirmación y envía una sola ac
   await expect(page.getByRole('alert')).toContainText('Confirmación de prueba');
   expect(calls).toBe(1);
   await expect(confirm).toBeEnabled();
+});
+
+test('entrada inválida pide clarificación y permite volver a una consulta analítica', async ({ page }) => {
+  const actions: string[] = [];
+  page.on('request', request => { if (request.url().endsWith('/api/actions')) actions.push(request.url()); });
+  await enter(page);
+  await ask(page, 'm');
+  await expect(page.locator('.finance-notice')).toContainText('No entendí tu consulta');
+  await expect(page.locator('canvas, .context-action')).toHaveCount(0);
+  expect(actions).toEqual([]);
+  await ask(page, '¿En qué gasté más este mes?');
+  await expect(page.locator('canvas')).toHaveCount(2);
+  await expect(page.locator('.finance-notice')).toHaveCount(0);
 });

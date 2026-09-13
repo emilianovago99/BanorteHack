@@ -171,8 +171,8 @@ def gateway(data_dir):
                 process.wait(timeout=5)
 
 
-def action_from(view, node):
-    return {"version": "v0.9", "action": {**node["action"]["event"], "surfaceId": view["surface_id"],
+def action_from(view, node, closing=False):
+    return {"version": "v0.9", "action": {**node["transactionalAction" if closing else "action"]["event"], "surfaceId": view["surface_id"],
             "sourceComponentId": node["id"], "timestamp": "2026-08-31T12:00:00Z"}}
 
 
@@ -190,8 +190,8 @@ def test_gateway_simulate_confirm_mcp_and_reconcile(gateway, data_dir):
     nodes = simulation["a2ui"][2]["updateComponents"]["components"]
     for node in nodes:
         validator.validate(node)
-    button = next(node for node in nodes if node.get("action", {}).get("event", {}).get("name") == "confirm_debt_payment")
-    action = action_from(simulation, button)
+    button = next(node for node in nodes if node.get("transactionalAction", {}).get("event", {}).get("name") == "confirm_debt_payment")
+    action = action_from(simulation, button, closing=True)
     confirmed = gateway.post("/api/actions", json=action)
     assert confirmed.status_code == 200
     confirmed = confirmed.json()
@@ -218,10 +218,11 @@ def test_gateway_simulate_confirm_mcp_and_reconcile(gateway, data_dir):
 
 
 def test_full_payoff_and_retry_use_current_balance(repo):
-    first = repo.apply_debt_payment("laptop", 8400)
+    balance = next(row["balance"] for row in repo.get_debts()["rows"] if row["id"] == "laptop")
+    first = repo.apply_debt_payment("laptop", balance)
     assert first["debt_after"]["balance"] == 0
     second = repo.apply_debt_payment("card-classic", 500)
-    retry = repo.apply_debt_payment("laptop", 8400)
+    retry = repo.apply_debt_payment("laptop", balance)
     assert retry["transaction_id"] == first["transaction_id"]
     assert retry["balance_after"] == second["balance_after"]
     assert retry["debt_after"]["balance"] == 0

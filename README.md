@@ -1,4 +1,4 @@
-# BanorteHack
+# Lazy Bank
 
 Asistente financiero con 11,602 movimientos sintéticos, herramientas MCP y una interfaz web que cambia con cada pregunta mediante A2UI. Incluye login con Auth0 y voz con ElevenLabs. Consulta gastos por comercio, origen de ingresos, presupuestos, suscripciones y créditos; elige planes de inversión y ajusta sus proyecciones. Todo utiliza un perfil ficticio compartido: `confirm_debt_payment` sólo muta ese dataset demo y no ejecuta movimientos bancarios reales. Ver [arquitectura actual](docs/architecture.md).
 
@@ -22,7 +22,7 @@ datasets/synthetic/        CSV reproducible, perfil, créditos y presupuestos
 
 ## Inicio rápido
 
-Requisitos: Node.js 20.19.4+ (recomendado 22), npm y Python 3.10+; Docker es opcional. Expo SDK 54 usa React Native 0.81 y React 19.1 según su [matriz de compatibilidad](https://docs.expo.dev/versions/v54.0.0/).
+Requisitos: Node.js 22.18+ (recomendado 24), npm y Python 3.10+; Docker es opcional. Expo SDK 54 usa React Native 0.81 y React 19.1 según su [matriz de compatibilidad](https://docs.expo.dev/versions/v54.0.0/).
 
 Desde la raíz:
 
@@ -76,7 +76,7 @@ Copy-Item apps/mobile/.env.example apps/mobile/.env
 npm run dev:mobile
 ```
 
-Para un teléfono físico, configurar `EXPO_PUBLIC_API_URL` con la IP LAN de la computadora y `HOST=0.0.0.0` en `services/api/.env` para permitir la conexión desde la red local. En el emulador Android, usar `http://10.0.2.2:3001`. El login requiere un **development build** con el esquema `banortehack`; reconstruirlo con `npm run android --workspace @banortehack/mobile`. Expo Go no soporta este callback propio. Ver [configuración móvil](docs/auth-and-voice.md).
+Para un teléfono físico, configurar `EXPO_PUBLIC_API_URL` con la IP LAN de la computadora y `HOST=0.0.0.0` en `services/api/.env` para permitir la conexión desde la red local. En el emulador Android, usar `http://10.0.2.2:3001`. El login requiere un **development build** con el esquema `lazy-bank`; reconstruirlo con `npm run android --workspace @lazy-bank/mobile`. Expo Go no soporta este callback propio. Ver [configuración móvil](docs/auth-and-voice.md).
 
 ## Docker y datos
 
@@ -108,9 +108,11 @@ npm run typecheck
 npm run build
 npm test
 .\.venv\Scripts\python -m pytest services/ai/tests
-npm run test:e2e --workspace @banortehack/web
+npm run test:e2e --workspace @lazy-bank/web
 ```
 
 Las pruebas cubren conciliación del CSV, amortización, proyecciones, consultas MCP, acciones A2UI, parámetros inválidos, JWT y audio. Playwright levanta servicios aislados en 8001/3002/5180 y usa Edge en Windows; en otros sistemas instala Chromium con `npx playwright install chromium`. Los recorridos de navegador verifican gráficas, selección de planes, aportaciones desde el chat y adaptación a teléfonos. Las pruebas usan datos locales y no consumen Gemini ni ElevenLabs.
 
 El lockfile de npm fija las dependencias JS; las dependencias Python están acotadas en `pyproject.toml` y se deben bloquear antes de un despliegue reproducible.
+
+El contrato A2UI y su extensión se describen en [Auditoría de acciones](docs/a2ui-actions.md).

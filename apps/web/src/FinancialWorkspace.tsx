@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
-import type { AccountSummary, ChatResponse, UIAction } from '@banortehack/contracts';
-import { A2UIRenderer } from '@banortehack/visual-engine';
+import type { AccountSummary, ChatResponse, UIAction } from '@lazy-bank/contracts';
+import { A2UIRenderer } from '@lazy-bank/visual-engine';
 import { useSession } from './session';
 
 type ViewMode = 'zero' | 'loading' | 'surface';

@@ -1,16 +1,26 @@
 {
-  "name": "banortehack",
+  "name": "lazy-bank",
   "version": "0.1.0",
   "private": true,
-  "workspaces": ["apps/*", "packages/*", "services/api"],
-  "engines": { "node": ">=20.19.4" },
-  "scripts": {
-    "dev:web": "npm run dev --workspace @banortehack/web",
-    "dev:mobile": "npm run start --workspace @banortehack/mobile",
-    "dev:api": "npm run dev --workspace @banortehack/api",
-    "build": "npm run build --workspace @banortehack/web",
-    "typecheck": "npm run typecheck --workspaces --if-present",
-    "test": "npm run test --workspace @banortehack/api"
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "services/api"
+  ],
+  "engines": {
+    "node": ">=22.18.0"
   },
-  "devDependencies": { "typescript": "~5.9.2" }
+  "scripts": {
+    "dev:web": "npm run dev --workspace @lazy-bank/web",
+    "dev:mobile": "npm run start --workspace @lazy-bank/mobile",
+    "dev:api": "npm run dev --workspace @lazy-bank/api",
+    "build": "npm run build --workspace @lazy-bank/web",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run contracts:check && npm run test --workspace @lazy-bank/contracts && npm run test --workspace @lazy-bank/api",
+    "contracts:check": "npm run check --workspace @lazy-bank/contracts",
+    "contracts:generate": "npm run generate --workspace @lazy-bank/contracts"
+  },
+  "devDependencies": {
+    "typescript": "~5.9.2"
+  }
 }

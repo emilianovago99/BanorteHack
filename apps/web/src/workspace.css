@@ -213,3 +213,8 @@ progress::-moz-progress-bar{background:#578d7d;border-radius:5px}
 .zero-chips button:hover{background:var(--accent-soft);color:var(--accent)}
 .surface-heading{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
 .surface-answer{font-size:14px;line-height:1.75;color:var(--ink);margin:0 0 22px;max-width:900px}
+
+
+.a2ui-actionable{min-width:0;display:flex;flex-direction:column;gap:12px}
+.a2ui-actionable>section{flex:1}
+.a2ui-actionable>button{white-space:normal}

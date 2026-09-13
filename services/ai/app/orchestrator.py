@@ -1,6 +1,17 @@
 from app.a2ui import Surface, TRANSACTION_COLUMNS, money
-from app.schemas import ChatResponse, Visualization, QueryPlan, SimulationInput, DebtInput, ClientAction
+from app.schemas import ChatResponse, Visualization, QueryPlan, SimulationInput, DebtInput, PaymentInput, ClientAction
 from app.planner import plan_query
+from app.mcp.client import FinancialQueryError
+
+# Explicit MCP dispatch: incoming events can never choose an arbitrary tool.
+ACTION_TOOLS = {
+    "select_plan": "project_investment",
+    "simulate_investment": "project_investment",
+    "simulate_debt": "simulate_debt_payoff",
+    "confirm_debt_payment": "confirm_debt_payment",
+    "compare_plans": "get_investment_plans",
+    "show_transactions": "search_transactions",
+}
 
 
 def response(surface, message, domain, tools, interpretation="local", period=None, simulation=None, transaction=None):
@@ -20,6 +31,8 @@ async def render_plan(plan, tools, interpretation="local"):
     domain, month = plan.intent, plan.month
     if domain in ("fuera_tema", "incomprensible", "sin_datos", "no_disponible", "cuota_agotada"):
         return await query_issue(tools, {"fuera_tema": "out_of_scope", "incomprensible": "not_understood", "sin_datos": "no_data", "no_disponible": "unavailable", "cuota_agotada": "quota"}[domain], interpretation)
+    if domain == "clarificacion":
+        return await query_issue(tools, "not_understood", interpretation)
     overview = await tools.call("get_account_overview", month=month)
     month = overview["month"]
     if domain in ("resumen", "gastos", "ingresos", "movimientos", "presupuestos", "suscripciones") and not overview["dataset"]["start_date"][:7] <= month <= overview["dataset"]["end_date"][:7]:
@@ -53,7 +66,7 @@ async def render_plan(plan, tools, interpretation="local"):
         if not data["count"]:
             return await query_issue(tools, "no_data", interpretation)
         surface.body += [surface.row(surface.metric("Movimientos encontrados", data["count"], "number"), surface.metric("Monto total encontrado", data["amount"])), surface.table("Detalle de movimientos", TRANSACTION_COLUMNS, data["rows"])]
-        surface.body.append(surface.notice(f"Mostrando {len(data['rows'])} de {data['count']} registros. Refina por mes, comercio o categoría desde el chat."))
+        surface.body.append(surface.text(f"Mostrando {len(data['rows'])} de {data['count']} registros. Refina por mes, comercio o categoría desde el chat."))
         message = f"Encontré {data['count']} movimientos en {month}" + (f" para {plan.merchant or plan.category}" if plan.merchant or plan.category else "") + ". Puedes revisar su origen, destino y categoría."
     elif domain == "presupuestos":
         data = await tools.call("get_budget_status", month=month)
@@ -69,26 +82,46 @@ async def render_plan(plan, tools, interpretation="local"):
         surface.body.append(surface.row(surface.metric("Deuda total", data["total"]), surface.metric("Pagos mínimos", sum(row["minimum_payment"] for row in data["rows"])), surface.metric("Créditos activos", len(data["rows"]), "number")))
         cards = []
         for debt in data["rows"]:
-            cards.append(surface.node("DebtCard", data=surface.bind(debt), action={"event": {"name": "simulate_debt", "context": {"debt_id": debt["id"], "extra_payment": 500}}}))
+            if debt["balance"] <= 0:
+                surface.body.append(surface.text(f"{debt['name']}: deuda liquidada."))
+                continue
+            payment = min(500, debt["balance"])
+            cards.append(surface.node("DebtCard", data=surface.bind(debt),
+                action={"event": {"name": "simulate_debt", "context": {"debt_id": debt["id"], "extra_payment": 500}}},
+                transactionalAction={"label": f"Confirmar abono único de {money(payment)} a {debt['name']}", "kind": "mutation",
+                    "event": {"name": "confirm_debt_payment", "context": {"debt_id": debt["id"], "extra_payment": payment}}}))
         surface.body.append(surface.row(*cards))
         message = f"Tu perfil tiene {money(data['total'])} de deuda. Selecciona un crédito para comparar el pago mínimo con un abono adicional de $500 mensuales."
     else:
         data = await tools.call("get_investment_plans", amount=plan.amount)
-        surface.body.append(surface.notice(data["debt_notice"]))
-        cards = [surface.node("PlanCard", data=surface.bind(item), amount=plan.amount, action={"event": {"name": "select_plan", "context": {"plan_id": item["id"], "amount": plan.amount, "monthly_contribution": plan.monthly_contribution, "months": plan.months}}}) for item in data["plans"]]
-        surface.body += [surface.row(*cards), surface.notice(data["assumption"])]
+        surface.body.append(surface.text(data["debt_notice"]))
+        cards = []
+        for item in data["plans"]:
+            event = {"name": "select_plan", "context": {"plan_id": item["id"], "amount": plan.amount, "monthly_contribution": plan.monthly_contribution, "months": plan.months}}
+            cards.append(surface.node("PlanCard", data=surface.bind(item), amount=plan.amount,
+                action={"event": event},
+                transactionalAction={"label": f"Explorar {item['name']}", "kind": "simulation", "event": event}))
+        surface.body += [surface.row(*cards), surface.text(data["assumption"])]
         message = f"Preparé tres escenarios educativos para un capital inicial de {money(plan.amount)}. Elige uno para explorar su proyección y ajustar las aportaciones."
     return response(surface, message, domain, tools, interpretation, period=month)
 
 
 async def query_issue(tools, reason, interpretation="local"):
-    result = await tools.call("report_query_issue", reason=reason)
+    # Unintelligible input is clarified locally, before any financial MCP call.
+    if reason == "not_understood":
+        message = "No entendí tu consulta. Puedes pedir tus gastos, ingresos, deudas o una simulación de inversión."
+        domain = "clarificacion"
+    else:
+        try:
+            result = await tools.call("report_query_issue", reason=reason)
+            message = result["message"]
+        except FinancialQueryError:
+            message = "No pude conseguir la información en este momento. Intenta de nuevo en unos instantes."
+            interpretation = "unavailable"
+        domain = "resumen"
     surface = Surface()
-    surface.body.append(surface.text("Probemos con otra pregunta", "h2"))
-    surface.body.append(surface.notice(result["message"]))
-    for suggestion in result["suggestions"]:
-        surface.body.append(surface.text(suggestion))
-    return response(surface, result["message"], "resumen", tools, interpretation)
+    surface.body.append(surface.notice(message))
+    return response(surface, message, domain, tools, interpretation)
 
 
 async def answer(request, tools):
@@ -111,7 +144,7 @@ async def answer(request, tools):
         if chart:
             data = model[chart["data"]["path"].lstrip("/")]
             current.visualization = Visualization(type=chart["chartType"], title=chart["title"], labels=data["labels"], values=data["series"][0]["values"])
-        return current
+        return ChatResponse.model_validate(current.model_dump())
     if plan.intent == "personalizar":
         return await query_issue(tools, "not_understood", interpretation)
     if plan.intent == "inversiones" and plan.plan_id:
@@ -123,38 +156,41 @@ async def answer(request, tools):
 
 
 async def handle_action(action, tools):
+    action = ClientAction.model_validate(action.model_dump())
     context = action.context
     if action.name in ("select_plan", "simulate_investment"):
         params = SimulationInput.model_validate(context)
-        data = await tools.call("project_investment", **params.model_dump())
+        data = await tools.call(ACTION_TOOLS[action.name], **params.model_dump())
         surface = Surface()
         surface.body.append(surface.row(surface.metric("Valor proyectado", data["final_value"], tone="positive"), surface.metric("Tus aportaciones", data["contributed"]), surface.metric("Ganancia hipotética", data["estimated_gain"], tone="positive")))
         surface.body.append(surface.node("Simulator", data=surface.bind(params.model_dump()), action={"event": {"name": "simulate_investment", "context": params.model_dump()}}))
         surface.body.append(surface.chart("Así podría evolucionar tu inversión", [f"Mes {row['month']}" for row in data["rows"]], [{"label": label, "values": [row[key] for row in data["rows"]]} for key, label in [("low", "Escenario inferior"), ("base", "Escenario base"), ("high", "Escenario superior"), ("contributed", "Aportaciones")]], "line"))
         surface.body.append(surface.chart("Distribución del plan", [row["label"] for row in data["plan"]["allocation"]], [{"label": "%", "values": [row["value"] for row in data["plan"]["allocation"]]}], "doughnut"))
-        surface.body.append(surface.notice(data["assumption"]))
+        surface.body.append(surface.text(data["assumption"]))
         surface.body.append(surface.button("Comparar otros planes", "compare_plans", {"amount": params.amount}))
         message = f"Con {data['plan']['name']}, el escenario base a {params.months} meses resulta en {money(data['final_value'])}, de los cuales {money(data['contributed'])} son aportaciones. Es una simulación, no una promesa de rendimiento."
         return response(surface, message, "inversiones", tools, simulation=params)
     if action.name == "simulate_debt":
         params = DebtInput.model_validate(context)
-        data = await tools.call("simulate_debt_payoff", **params.model_dump())
+        data = await tools.call(ACTION_TOOLS[action.name], **params.model_dump())
         surface = Surface()
         surface.body.append(surface.row(surface.metric("Intereses que evitarías", data["interest_saved"], tone="positive"), surface.metric("Meses que adelantas", data["months_saved"], "number"), surface.metric("Nuevo plazo", data["accelerated"]["months"], "number")))
         count = data["baseline"]["months"]
         surface.body.append(surface.chart("Tu deuda hasta llegar a cero", [f"Mes {i+1}" for i in range(count)], [{"label": title, "values": [data[key]["rows"][i]["balance"] if i < len(data[key]["rows"]) else 0 for i in range(count)]} for key, title in [("baseline", "Pago mínimo"), ("accelerated", "Con pago extra")]], "line"))
-        surface.body.append(surface.notice("Simulación con tasa constante, sin compras nuevas, comisiones ni cargos adicionales. No se ha realizado ningún pago."))
+        surface.body.append(surface.text("Simulación con tasa constante, sin compras nuevas, comisiones ni cargos adicionales. No se ha realizado ningún pago."))
         if 0 < params.extra_payment <= data["debt"]["balance"]:
-            surface.body.append(surface.notice(f"Puedes confirmar ahora un abono único de {money(params.extra_payment)} a {data['debt']['name']}. Descontará ese monto de tu cuenta y de tu deuda de demostración; no programa pagos mensuales."))
-            surface.body.append(surface.button(f"Confirmar abono único de {money(params.extra_payment)}", "confirm_debt_payment", params.model_dump()))
+            surface.body.append(surface.text(f"Puedes confirmar ahora un abono único de {money(params.extra_payment)} a {data['debt']['name']}. Descontará ese monto de tu cuenta y de tu deuda de demostración; no programa pagos mensuales."))
+            chart = next(node for node in surface.components if node["component"] == "FinancialChart")
+            chart["transactionalAction"] = {"label": f"Confirmar abono único de {money(params.extra_payment)}", "kind": "mutation",
+                "event": {"name": "confirm_debt_payment", "context": params.model_dump()}}
         return response(surface, f"En {data['debt']['name']}, añadir {money(params.extra_payment)} al mes reduce el plazo en {data['months_saved']} meses y los intereses en {money(data['interest_saved'])}.", "deudas", tools)
     if action.name == "confirm_debt_payment":
-        params = DebtInput.model_validate(context)
-        result = await tools.call("confirm_debt_payment", **params.model_dump())
+        params = PaymentInput.model_validate(context)
+        result = await tools.call(ACTION_TOOLS[action.name], **params.model_dump())
         surface = Surface()
         surface.body.append(surface.text("Pago confirmado", "h2"))
         surface.body.append(surface.row(surface.metric("Saldo disponible", result["balance_after"]), surface.metric("Deuda restante", result["debt_after"]["balance"])))
-        surface.body.append(surface.notice(f"Abono único registrado en el perfil de demostración. Folio: {result['transaction_id']}"))
+        surface.body.append(surface.text(f"Abono único registrado en el perfil de demostración. Folio: {result['transaction_id']}"))
         return response(surface, f"Pago confirmado de {money(params.extra_payment)}. Tu saldo disponible es {money(result['balance_after'])}.", "deudas", tools, transaction=result)
     if action.name == "compare_plans":
         return await render_plan(QueryPlan(intent="inversiones", amount=context.get("amount", 10000)), tools)

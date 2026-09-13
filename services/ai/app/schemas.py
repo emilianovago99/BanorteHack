@@ -1,9 +1,9 @@
 from __future__ import annotations
-from typing import Literal
-from pydantic import BaseModel, Field, ConfigDict
+from typing import Literal, ClassVar
+from pydantic import BaseModel, Field, ConfigDict, field_validator, model_validator
 
-FinancialDomain = Literal["resumen", "deudas", "ingresos", "gastos", "inversiones", "presupuestos", "movimientos", "suscripciones"]
-PlanIntent = Literal["resumen", "deudas", "ingresos", "gastos", "inversiones", "presupuestos", "movimientos", "suscripciones", "fuera_tema", "incomprensible", "sin_datos", "no_disponible", "cuota_agotada", "personalizar"]
+FinancialDomain = Literal["resumen", "deudas", "ingresos", "gastos", "inversiones", "presupuestos", "movimientos", "suscripciones", "clarificacion"]
+PlanIntent = Literal["resumen", "deudas", "ingresos", "gastos", "inversiones", "presupuestos", "movimientos", "suscripciones", "fuera_tema", "incomprensible", "sin_datos", "no_disponible", "cuota_agotada", "personalizar", "clarificacion"]
 
 
 class ChatTurn(BaseModel):
@@ -56,6 +56,13 @@ class ChatResponse(BaseModel):
     mode: Literal["demo"] = "demo"
     visualization: Visualization
     a2ui: list[dict]
+
+    @field_validator("a2ui")
+    @classmethod
+    def valid_surface(cls, value):
+        from app.a2ui_validation import validate_surface
+        return validate_surface(value)
+
     surface_id: str
     transaction: TransactionResult | None = None
     workspace_operation: Literal["create", "update"] = "create"
@@ -72,15 +79,40 @@ class ClientAction(BaseModel):
     surfaceId: str = Field(max_length=100)
     sourceComponentId: str = Field(max_length=100)
     timestamp: str = Field(max_length=60)
-    context: dict = Field(default_factory=dict)
+    context: dict
+
+    @field_validator("context")
+    @classmethod
+    def valid_context(cls, value, info):
+        from app.a2ui_validation import validate_contract
+        if "name" in info.data:
+            validate_contract("event", {"name": info.data["name"], "context": value})
+        return value
+
 
 
 class ActionRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     version: Literal["v0.9"] = "v0.9"
     action: ClientAction
 
 
-class SimulationInput(BaseModel):
+class ContractInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    event_name: ClassVar[str]
+
+    @model_validator(mode="before")
+    @classmethod
+    def valid_contract(cls, value):
+        from app.a2ui_validation import validate_contract
+        if isinstance(value, cls):
+            value = value.model_dump()
+        validate_contract("event", {"name": cls.event_name, "context": value})
+        return value
+
+
+class SimulationInput(ContractInput):
+    event_name = "simulate_investment"
     model_config = ConfigDict(extra="forbid")
     plan_id: Literal["conservative", "balanced", "growth"]
     amount: float = Field(default=10000, ge=100, le=1000000)
@@ -88,7 +120,14 @@ class SimulationInput(BaseModel):
     months: int = Field(default=24, ge=1, le=120)
 
 
-class DebtInput(BaseModel):
+class DebtInput(ContractInput):
+    event_name = "simulate_debt"
     model_config = ConfigDict(extra="forbid")
     debt_id: Literal["card-classic", "personal-loan", "laptop"]
     extra_payment: float = Field(default=500, ge=0, le=100000)
+
+
+class PaymentInput(ContractInput):
+    event_name = "confirm_debt_payment"
+    debt_id: Literal["card-classic", "personal-loan", "laptop"]
+    extra_payment: float = Field(gt=0, le=100000, allow_inf_nan=False)

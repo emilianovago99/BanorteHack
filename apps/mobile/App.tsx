@@ -1,7 +1,7 @@
 ﻿import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, StatusBar, Text, TextInput, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
-import type { AccountSummary, ChatResponse, UIAction } from '@banortehack/contracts';
+import type { AccountSummary, ChatResponse, UIAction } from '@lazy-bank/contracts';
 import { MobileSessionProvider, useSession } from './session';
 import { SpeechPlayer } from './SpeechPlayer';
 import { A2UIRenderer } from './A2UIRenderer';
@@ -43,7 +43,7 @@ function Workspace() {
     finally { inFlight.current = false; setBusy(false); }
   }
   return <ThemeContext.Provider value={theme}><SafeAreaView style={ui.page}><KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-    <View style={[ui.row, { paddingHorizontal: 20, paddingVertical: 12 }]}><Text style={ui.brand}>BANORTEHACK</Text><ActionButton title="Cerrar sesión" secondary onPress={logout} disabled={busy} /></View>
+    <View style={[ui.row, { paddingHorizontal: 20, paddingVertical: 12 }]}><Text style={ui.brand}>LAZY BANK</Text><ActionButton title="Cerrar sesión" secondary onPress={logout} disabled={busy} /></View>
     <ScrollView ref={scroll} keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: 20, gap: 18, flexGrow: 1, justifyContent: view ? 'flex-start' : 'center' }}>
       {!view && <View style={{ gap: 12, alignItems: 'center', paddingVertical: 28 }}><Text style={ui.body}>Saldo disponible</Text><Text style={[ui.hero, { fontSize: 38 }]}>{account ? new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(account.balance) : '—'}</Text><Text style={ui.caption}>Perfil sintético de Alex · MXN</Text></View>}
       {!!notice && <Panel><Text accessibilityLiveRegion="polite" style={ui.body}>{notice}</Text></Panel>}

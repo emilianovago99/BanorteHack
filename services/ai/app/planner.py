@@ -9,17 +9,20 @@ def normalize(text):
     return "".join(char for char in unicodedata.normalize("NFD", text.lower()) if not unicodedata.combining(char))
 
 
+def is_unintelligible(message):
+    compact = "".join(re.findall(r"[a-z0-9]+", normalize(message)))
+    vowel_count = sum(character in "aeiou" for character in compact)
+    return len(compact) < 3 or bool(compact and vowel_count / len(compact) < 0.2)
+
+
 def local_plan(message, history=(), simulation=None):
     text = normalize(message)
     intent = "resumen"
-    words = re.findall(r"[a-z0-9]+", text)
     financial_terms = ("resumen", "dinero", "finanza", "saldo", "cuenta", "gasto", "gaste", "ingreso", "deuda", "credito", "prestamo", "pago", "invert", "inversion", "ahorro", "presupuesto", "suscrip", "movimiento", "transaccion", "comercio", "nomina", "sueldo", "salario", "tarjeta", "aport")
     greetings = {"hola", "buenos dias", "buenas tardes", "buenas noches", "que tal", "gracias"}
     if text in greetings:
         return QueryPlan(intent="fuera_tema")
-    compact = "".join(words)
-    vowel_count = sum(character in "aeiou" for character in compact)
-    if len(compact) < 3 or (compact and vowel_count / len(compact) < 0.2):
+    if is_unintelligible(message):
         return QueryPlan(intent="incomprensible")
     followup = bool(history or simulation) and any(term in text for term in ("mes", "ano", "plazo", "capital"))
     if not any(term in text for term in financial_terms) and not followup:
@@ -74,6 +77,8 @@ def local_plan(message, history=(), simulation=None):
 
 
 async def plan_query(request):
+    if is_unintelligible(request.message):
+        return QueryPlan(intent="incomprensible"), "local"
     settings = Settings()
     if settings.gemini_api_key and settings.ai_mode != "local":
         try:

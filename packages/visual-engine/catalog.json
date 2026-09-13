@@ -1,50 +1,769 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "banortehack:finance-v1",
-  "title": "Catálogo financiero BanorteHack para A2UI v0.9",
-  "$defs": {
-    "theme": { "type": "object", "additionalProperties": false },
-    "binding": { "type": "object", "properties": { "path": { "type": "string", "pattern": "^/" } }, "required": ["path"], "additionalProperties": false },
-    "action": {
-      "type": "object",
-      "properties": { "event": {
-        "type": "object",
-        "properties": {
-          "name": { "enum": ["select_plan", "simulate_investment", "compare_plans", "simulate_debt", "show_transactions", "confirm_debt_payment"] },
-          "context": { "type": "object" }
-        },
-        "required": ["name", "context"], "additionalProperties": false
-      } },
-      "required": ["event"], "additionalProperties": false
-    },
-    "anyComponent": {
+  "oneOf": [
+    {
       "type": "object",
       "properties": {
-        "id": { "type": "string", "maxLength": 100 },
-        "component": { "enum": ["Column", "Row", "Text", "Metric", "FinancialChart", "DataTable", "Button", "Notice", "PlanCard", "DebtCard", "Simulator", "BudgetList", "GoalList"] },
-        "children": { "type": "array", "items": { "type": "string" }, "maxItems": 100 },
-        "text": { "type": "string", "maxLength": 4000 },
-        "title": { "type": "string" }, "variant": { "type": "string" },
-        "label": { "type": "string" }, "value": { "type": "number" },
-        "format": { "enum": ["currency", "number", "percent"] },
-        "tone": { "type": "string" }, "detail": { "type": "string" },
-        "data": { "$ref": "#/$defs/binding" },
-        "chartType": { "enum": ["bar", "line", "doughnut"] },
-        "palette": { "type": "array", "minItems": 1, "maxItems": 12, "items": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" } },
-        "columns": { "type": "array", "items": { "type": "object", "properties": { "key": { "type": "string" }, "label": { "type": "string" }, "format": { "type": "string" } }, "required": ["key", "label"], "additionalProperties": false } },
-        "action": { "$ref": "#/$defs/action" }, "amount": { "type": "number" }
+        "id": {
+          "$ref": "#/$defs/__schema0"
+        },
+        "transactionalAction": {
+          "$ref": "#/$defs/__schema1"
+        },
+        "component": {
+          "type": "string",
+          "const": "Column"
+        },
+        "children": {
+          "maxItems": 100,
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/__schema10"
+          }
+        }
       },
-      "required": ["id", "component"], "additionalProperties": false,
-      "allOf": [
-        { "if": { "properties": { "component": { "enum": ["Column", "Row"] } } }, "then": { "required": ["children"] } },
-        { "if": { "properties": { "component": { "enum": ["Text", "Notice", "Button"] } } }, "then": { "required": ["text"] } },
-        { "if": { "properties": { "component": { "const": "Metric" } } }, "then": { "required": ["label", "value"] } },
-        { "if": { "properties": { "component": { "enum": ["FinancialChart", "DataTable", "PlanCard", "DebtCard", "Simulator", "BudgetList", "GoalList"] } } }, "then": { "required": ["data"] } },
-        { "if": { "properties": { "component": { "enum": ["Button", "PlanCard", "DebtCard", "Simulator"] } } }, "then": { "required": ["action"] } },
-        { "if": { "properties": { "component": { "const": "FinancialChart" } } }, "then": { "required": ["title", "chartType"] } },
-        { "if": { "properties": { "component": { "const": "DataTable" } } }, "then": { "required": ["title", "columns"] } }
+      "required": [
+        "id",
+        "component",
+        "children"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/__schema0"
+        },
+        "transactionalAction": {
+          "$ref": "#/$defs/__schema1"
+        },
+        "component": {
+          "type": "string",
+          "const": "Row"
+        },
+        "children": {
+          "maxItems": 100,
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/__schema11"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "component",
+        "children"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/__schema0"
+        },
+        "transactionalAction": {
+          "$ref": "#/$defs/__schema1"
+        },
+        "component": {
+          "type": "string",
+          "const": "Text"
+        },
+        "text": {
+          "$ref": "#/$defs/__schema12"
+        },
+        "variant": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "component",
+        "text"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "component": {
+          "type": "string",
+          "const": "Notice"
+        },
+        "text": {
+          "$ref": "#/$defs/__schema12"
+        }
+      },
+      "required": [
+        "id",
+        "component",
+        "text"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/__schema0"
+        },
+        "transactionalAction": {
+          "$ref": "#/$defs/__schema1"
+        },
+        "component": {
+          "type": "string",
+          "const": "Metric"
+        },
+        "label": {
+          "$ref": "#/$defs/__schema13"
+        },
+        "value": {
+          "$ref": "#/$defs/__schema6"
+        },
+        "format": {
+          "type": "string",
+          "enum": [
+            "currency",
+            "number",
+            "percent"
+          ]
+        },
+        "tone": {
+          "type": "string"
+        },
+        "detail": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "component",
+        "label",
+        "value"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/__schema0"
+        },
+        "transactionalAction": {
+          "$ref": "#/$defs/__schema1"
+        },
+        "component": {
+          "type": "string",
+          "const": "FinancialChart"
+        },
+        "title": {
+          "$ref": "#/$defs/__schema13"
+        },
+        "data": {
+          "$ref": "#/$defs/__schema14"
+        },
+        "chartType": {
+          "type": "string",
+          "enum": [
+            "bar",
+            "line",
+            "doughnut"
+          ]
+        },
+        "palette": {
+          "minItems": 1,
+          "maxItems": 12,
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/__schema15"
+          }
+        },
+        "action": {
+          "$ref": "#/$defs/__schema16"
+        }
+      },
+      "required": [
+        "id",
+        "component",
+        "title",
+        "data",
+        "chartType"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/__schema0"
+        },
+        "transactionalAction": {
+          "$ref": "#/$defs/__schema1"
+        },
+        "component": {
+          "type": "string",
+          "const": "DataTable"
+        },
+        "title": {
+          "$ref": "#/$defs/__schema13"
+        },
+        "data": {
+          "$ref": "#/$defs/__schema14"
+        },
+        "columns": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "key": {
+                "type": "string"
+              },
+              "label": {
+                "$ref": "#/$defs/__schema13"
+              },
+              "format": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "key",
+              "label"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "action": {
+          "$ref": "#/$defs/__schema16"
+        }
+      },
+      "required": [
+        "id",
+        "component",
+        "title",
+        "data",
+        "columns"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/__schema0"
+        },
+        "transactionalAction": {
+          "$ref": "#/$defs/__schema1"
+        },
+        "component": {
+          "type": "string",
+          "const": "Button"
+        },
+        "text": {
+          "$ref": "#/$defs/__schema12"
+        },
+        "action": {
+          "$ref": "#/$defs/__schema17"
+        }
+      },
+      "required": [
+        "id",
+        "component",
+        "text",
+        "action"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/__schema0"
+        },
+        "transactionalAction": {
+          "$ref": "#/$defs/__schema7"
+        },
+        "component": {
+          "type": "string",
+          "const": "PlanCard"
+        },
+        "data": {
+          "$ref": "#/$defs/__schema14"
+        },
+        "amount": {
+          "$ref": "#/$defs/__schema6"
+        },
+        "action": {
+          "$ref": "#/$defs/__schema16"
+        }
+      },
+      "required": [
+        "id",
+        "transactionalAction",
+        "component",
+        "data"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/__schema0"
+        },
+        "transactionalAction": {
+          "$ref": "#/$defs/__schema2"
+        },
+        "component": {
+          "type": "string",
+          "const": "DebtCard"
+        },
+        "data": {
+          "$ref": "#/$defs/__schema14"
+        },
+        "action": {
+          "$ref": "#/$defs/__schema16"
+        }
+      },
+      "required": [
+        "id",
+        "transactionalAction",
+        "component",
+        "data"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/__schema0"
+        },
+        "transactionalAction": {
+          "$ref": "#/$defs/__schema1"
+        },
+        "component": {
+          "type": "string",
+          "const": "Simulator"
+        },
+        "data": {
+          "$ref": "#/$defs/__schema14"
+        },
+        "action": {
+          "$ref": "#/$defs/__schema17"
+        }
+      },
+      "required": [
+        "id",
+        "component",
+        "data",
+        "action"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/__schema0"
+        },
+        "transactionalAction": {
+          "$ref": "#/$defs/__schema1"
+        },
+        "component": {
+          "type": "string",
+          "const": "BudgetList"
+        },
+        "title": {
+          "$ref": "#/$defs/__schema13"
+        },
+        "data": {
+          "$ref": "#/$defs/__schema14"
+        },
+        "action": {
+          "$ref": "#/$defs/__schema16"
+        }
+      },
+      "required": [
+        "id",
+        "component",
+        "data"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/__schema0"
+        },
+        "transactionalAction": {
+          "$ref": "#/$defs/__schema1"
+        },
+        "component": {
+          "type": "string",
+          "const": "GoalList"
+        },
+        "title": {
+          "$ref": "#/$defs/__schema13"
+        },
+        "data": {
+          "$ref": "#/$defs/__schema14"
+        },
+        "action": {
+          "$ref": "#/$defs/__schema16"
+        }
+      },
+      "required": [
+        "id",
+        "component",
+        "data"
+      ],
+      "additionalProperties": false
+    }
+  ],
+  "$defs": {
+    "__schema0": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "__schema1": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/__schema2"
+        },
+        {
+          "$ref": "#/$defs/__schema7"
+        }
       ]
+    },
+    "__schema2": {
+      "type": "object",
+      "properties": {
+        "label": {
+          "$ref": "#/$defs/__schema3"
+        },
+        "kind": {
+          "type": "string",
+          "const": "mutation"
+        },
+        "event": {
+          "$ref": "#/$defs/__schema4"
+        }
+      },
+      "required": [
+        "label",
+        "kind",
+        "event"
+      ],
+      "additionalProperties": false
+    },
+    "__schema3": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "__schema4": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "const": "confirm_debt_payment"
+        },
+        "context": {
+          "type": "object",
+          "properties": {
+            "debt_id": {
+              "$ref": "#/$defs/__schema5"
+            },
+            "extra_payment": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 100000,
+              "multipleOf": 0.01,
+              "$ref": "#/$defs/__schema6"
+            }
+          },
+          "required": [
+            "debt_id",
+            "extra_payment"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "name",
+        "context"
+      ],
+      "additionalProperties": false
+    },
+    "__schema5": {
+      "type": "string",
+      "enum": [
+        "card-classic",
+        "personal-loan",
+        "laptop"
+      ]
+    },
+    "__schema6": {
+      "type": "number"
+    },
+    "__schema7": {
+      "type": "object",
+      "properties": {
+        "label": {
+          "$ref": "#/$defs/__schema3"
+        },
+        "kind": {
+          "type": "string",
+          "const": "simulation"
+        },
+        "event": {
+          "$ref": "#/$defs/__schema8"
+        }
+      },
+      "required": [
+        "label",
+        "kind",
+        "event"
+      ],
+      "additionalProperties": false
+    },
+    "__schema8": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "const": "select_plan"
+        },
+        "context": {
+          "$ref": "#/$defs/__schema9"
+        }
+      },
+      "required": [
+        "name",
+        "context"
+      ],
+      "additionalProperties": false
+    },
+    "__schema9": {
+      "type": "object",
+      "properties": {
+        "plan_id": {
+          "type": "string",
+          "enum": [
+            "conservative",
+            "balanced",
+            "growth"
+          ]
+        },
+        "amount": {
+          "default": 10000,
+          "type": "number",
+          "minimum": 100,
+          "maximum": 1000000,
+          "$ref": "#/$defs/__schema6"
+        },
+        "monthly_contribution": {
+          "default": 1000,
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100000,
+          "$ref": "#/$defs/__schema6"
+        },
+        "months": {
+          "default": 24,
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 120
+        }
+      },
+      "required": [
+        "plan_id"
+      ],
+      "additionalProperties": false
+    },
+    "__schema10": {
+      "type": "string"
+    },
+    "__schema11": {
+      "type": "string"
+    },
+    "__schema12": {
+      "type": "string",
+      "maxLength": 4000
+    },
+    "__schema13": {
+      "type": "string"
+    },
+    "__schema14": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "format": "starts_with",
+          "pattern": "^\\/.*"
+        }
+      },
+      "required": [
+        "path"
+      ],
+      "additionalProperties": false
+    },
+    "__schema15": {
+      "type": "string",
+      "pattern": "^#[0-9a-fA-F]{6}$"
+    },
+    "__schema16": {
+      "$ref": "#/$defs/__schema17"
+    },
+    "__schema17": {
+      "type": "object",
+      "properties": {
+        "event": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/__schema8"
+            },
+            {
+              "$ref": "#/$defs/__schema4"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "const": "simulate_investment"
+                },
+                "context": {
+                  "$ref": "#/$defs/__schema9"
+                }
+              },
+              "required": [
+                "name",
+                "context"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "const": "simulate_debt"
+                },
+                "context": {
+                  "type": "object",
+                  "properties": {
+                    "debt_id": {
+                      "$ref": "#/$defs/__schema5"
+                    },
+                    "extra_payment": {
+                      "default": 500,
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 100000,
+                      "$ref": "#/$defs/__schema6"
+                    }
+                  },
+                  "required": [
+                    "debt_id"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "name",
+                "context"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "const": "compare_plans"
+                },
+                "context": {
+                  "type": "object",
+                  "properties": {
+                    "amount": {
+                      "default": 10000,
+                      "type": "number",
+                      "minimum": 100,
+                      "maximum": 1000000,
+                      "$ref": "#/$defs/__schema6"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "name",
+                "context"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "const": "show_transactions"
+                },
+                "context": {
+                  "type": "object",
+                  "properties": {
+                    "month": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^20\\d{2}-(0[1-9]|1[0-2])$"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "kind": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "income",
+                            "expense"
+                          ]
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "name",
+                "context"
+              ],
+              "additionalProperties": false
+            }
+          ]
+        }
+      },
+      "required": [
+        "event"
+      ],
+      "additionalProperties": false
     }
   },
-  "$ref": "#/$defs/anyComponent"
+  "$id": "lazy-bank:finance-v1"
 }

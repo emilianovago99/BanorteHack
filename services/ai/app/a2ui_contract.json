@@ -1,0 +1,1880 @@
+{
+  "node": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "oneOf": [
+      {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/$defs/__schema0"
+          },
+          "transactionalAction": {
+            "$ref": "#/$defs/__schema1"
+          },
+          "component": {
+            "type": "string",
+            "const": "Column"
+          },
+          "children": {
+            "maxItems": 100,
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/__schema10"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "component",
+          "children"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/$defs/__schema0"
+          },
+          "transactionalAction": {
+            "$ref": "#/$defs/__schema1"
+          },
+          "component": {
+            "type": "string",
+            "const": "Row"
+          },
+          "children": {
+            "maxItems": 100,
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/__schema11"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "component",
+          "children"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/$defs/__schema0"
+          },
+          "transactionalAction": {
+            "$ref": "#/$defs/__schema1"
+          },
+          "component": {
+            "type": "string",
+            "const": "Text"
+          },
+          "text": {
+            "$ref": "#/$defs/__schema12"
+          },
+          "variant": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "component",
+          "text"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "component": {
+            "type": "string",
+            "const": "Notice"
+          },
+          "text": {
+            "$ref": "#/$defs/__schema12"
+          }
+        },
+        "required": [
+          "id",
+          "component",
+          "text"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/$defs/__schema0"
+          },
+          "transactionalAction": {
+            "$ref": "#/$defs/__schema1"
+          },
+          "component": {
+            "type": "string",
+            "const": "Metric"
+          },
+          "label": {
+            "$ref": "#/$defs/__schema13"
+          },
+          "value": {
+            "$ref": "#/$defs/__schema6"
+          },
+          "format": {
+            "type": "string",
+            "enum": [
+              "currency",
+              "number",
+              "percent"
+            ]
+          },
+          "tone": {
+            "type": "string"
+          },
+          "detail": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "component",
+          "label",
+          "value"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/$defs/__schema0"
+          },
+          "transactionalAction": {
+            "$ref": "#/$defs/__schema1"
+          },
+          "component": {
+            "type": "string",
+            "const": "FinancialChart"
+          },
+          "title": {
+            "$ref": "#/$defs/__schema13"
+          },
+          "data": {
+            "$ref": "#/$defs/__schema14"
+          },
+          "chartType": {
+            "type": "string",
+            "enum": [
+              "bar",
+              "line",
+              "doughnut"
+            ]
+          },
+          "palette": {
+            "minItems": 1,
+            "maxItems": 12,
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/__schema15"
+            }
+          },
+          "action": {
+            "$ref": "#/$defs/__schema16"
+          }
+        },
+        "required": [
+          "id",
+          "component",
+          "title",
+          "data",
+          "chartType"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/$defs/__schema0"
+          },
+          "transactionalAction": {
+            "$ref": "#/$defs/__schema1"
+          },
+          "component": {
+            "type": "string",
+            "const": "DataTable"
+          },
+          "title": {
+            "$ref": "#/$defs/__schema13"
+          },
+          "data": {
+            "$ref": "#/$defs/__schema14"
+          },
+          "columns": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "key": {
+                  "type": "string"
+                },
+                "label": {
+                  "$ref": "#/$defs/__schema13"
+                },
+                "format": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "key",
+                "label"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "action": {
+            "$ref": "#/$defs/__schema16"
+          }
+        },
+        "required": [
+          "id",
+          "component",
+          "title",
+          "data",
+          "columns"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/$defs/__schema0"
+          },
+          "transactionalAction": {
+            "$ref": "#/$defs/__schema1"
+          },
+          "component": {
+            "type": "string",
+            "const": "Button"
+          },
+          "text": {
+            "$ref": "#/$defs/__schema12"
+          },
+          "action": {
+            "$ref": "#/$defs/__schema17"
+          }
+        },
+        "required": [
+          "id",
+          "component",
+          "text",
+          "action"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/$defs/__schema0"
+          },
+          "transactionalAction": {
+            "$ref": "#/$defs/__schema7"
+          },
+          "component": {
+            "type": "string",
+            "const": "PlanCard"
+          },
+          "data": {
+            "$ref": "#/$defs/__schema14"
+          },
+          "amount": {
+            "$ref": "#/$defs/__schema6"
+          },
+          "action": {
+            "$ref": "#/$defs/__schema16"
+          }
+        },
+        "required": [
+          "id",
+          "transactionalAction",
+          "component",
+          "data"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/$defs/__schema0"
+          },
+          "transactionalAction": {
+            "$ref": "#/$defs/__schema2"
+          },
+          "component": {
+            "type": "string",
+            "const": "DebtCard"
+          },
+          "data": {
+            "$ref": "#/$defs/__schema14"
+          },
+          "action": {
+            "$ref": "#/$defs/__schema16"
+          }
+        },
+        "required": [
+          "id",
+          "transactionalAction",
+          "component",
+          "data"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/$defs/__schema0"
+          },
+          "transactionalAction": {
+            "$ref": "#/$defs/__schema1"
+          },
+          "component": {
+            "type": "string",
+            "const": "Simulator"
+          },
+          "data": {
+            "$ref": "#/$defs/__schema14"
+          },
+          "action": {
+            "$ref": "#/$defs/__schema17"
+          }
+        },
+        "required": [
+          "id",
+          "component",
+          "data",
+          "action"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/$defs/__schema0"
+          },
+          "transactionalAction": {
+            "$ref": "#/$defs/__schema1"
+          },
+          "component": {
+            "type": "string",
+            "const": "BudgetList"
+          },
+          "title": {
+            "$ref": "#/$defs/__schema13"
+          },
+          "data": {
+            "$ref": "#/$defs/__schema14"
+          },
+          "action": {
+            "$ref": "#/$defs/__schema16"
+          }
+        },
+        "required": [
+          "id",
+          "component",
+          "data"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/$defs/__schema0"
+          },
+          "transactionalAction": {
+            "$ref": "#/$defs/__schema1"
+          },
+          "component": {
+            "type": "string",
+            "const": "GoalList"
+          },
+          "title": {
+            "$ref": "#/$defs/__schema13"
+          },
+          "data": {
+            "$ref": "#/$defs/__schema14"
+          },
+          "action": {
+            "$ref": "#/$defs/__schema16"
+          }
+        },
+        "required": [
+          "id",
+          "component",
+          "data"
+        ],
+        "additionalProperties": false
+      }
+    ],
+    "$defs": {
+      "__schema0": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 100
+      },
+      "__schema1": {
+        "oneOf": [
+          {
+            "$ref": "#/$defs/__schema2"
+          },
+          {
+            "$ref": "#/$defs/__schema7"
+          }
+        ]
+      },
+      "__schema2": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "$ref": "#/$defs/__schema3"
+          },
+          "kind": {
+            "type": "string",
+            "const": "mutation"
+          },
+          "event": {
+            "$ref": "#/$defs/__schema4"
+          }
+        },
+        "required": [
+          "label",
+          "kind",
+          "event"
+        ],
+        "additionalProperties": false
+      },
+      "__schema3": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 200
+      },
+      "__schema4": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "const": "confirm_debt_payment"
+          },
+          "context": {
+            "type": "object",
+            "properties": {
+              "debt_id": {
+                "$ref": "#/$defs/__schema5"
+              },
+              "extra_payment": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "maximum": 100000,
+                "multipleOf": 0.01,
+                "$ref": "#/$defs/__schema6"
+              }
+            },
+            "required": [
+              "debt_id",
+              "extra_payment"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "name",
+          "context"
+        ],
+        "additionalProperties": false
+      },
+      "__schema5": {
+        "type": "string",
+        "enum": [
+          "card-classic",
+          "personal-loan",
+          "laptop"
+        ]
+      },
+      "__schema6": {
+        "type": "number"
+      },
+      "__schema7": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "$ref": "#/$defs/__schema3"
+          },
+          "kind": {
+            "type": "string",
+            "const": "simulation"
+          },
+          "event": {
+            "$ref": "#/$defs/__schema8"
+          }
+        },
+        "required": [
+          "label",
+          "kind",
+          "event"
+        ],
+        "additionalProperties": false
+      },
+      "__schema8": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "const": "select_plan"
+          },
+          "context": {
+            "$ref": "#/$defs/__schema9"
+          }
+        },
+        "required": [
+          "name",
+          "context"
+        ],
+        "additionalProperties": false
+      },
+      "__schema9": {
+        "type": "object",
+        "properties": {
+          "plan_id": {
+            "type": "string",
+            "enum": [
+              "conservative",
+              "balanced",
+              "growth"
+            ]
+          },
+          "amount": {
+            "default": 10000,
+            "type": "number",
+            "minimum": 100,
+            "maximum": 1000000,
+            "$ref": "#/$defs/__schema6"
+          },
+          "monthly_contribution": {
+            "default": 1000,
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100000,
+            "$ref": "#/$defs/__schema6"
+          },
+          "months": {
+            "default": 24,
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 120
+          }
+        },
+        "required": [
+          "plan_id"
+        ],
+        "additionalProperties": false
+      },
+      "__schema10": {
+        "type": "string"
+      },
+      "__schema11": {
+        "type": "string"
+      },
+      "__schema12": {
+        "type": "string",
+        "maxLength": 4000
+      },
+      "__schema13": {
+        "type": "string"
+      },
+      "__schema14": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "format": "starts_with",
+            "pattern": "^\\/.*"
+          }
+        },
+        "required": [
+          "path"
+        ],
+        "additionalProperties": false
+      },
+      "__schema15": {
+        "type": "string",
+        "pattern": "^#[0-9a-fA-F]{6}$"
+      },
+      "__schema16": {
+        "$ref": "#/$defs/__schema17"
+      },
+      "__schema17": {
+        "type": "object",
+        "properties": {
+          "event": {
+            "oneOf": [
+              {
+                "$ref": "#/$defs/__schema8"
+              },
+              {
+                "$ref": "#/$defs/__schema4"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "const": "simulate_investment"
+                  },
+                  "context": {
+                    "$ref": "#/$defs/__schema9"
+                  }
+                },
+                "required": [
+                  "name",
+                  "context"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "const": "simulate_debt"
+                  },
+                  "context": {
+                    "type": "object",
+                    "properties": {
+                      "debt_id": {
+                        "$ref": "#/$defs/__schema5"
+                      },
+                      "extra_payment": {
+                        "default": 500,
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 100000,
+                        "$ref": "#/$defs/__schema6"
+                      }
+                    },
+                    "required": [
+                      "debt_id"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "name",
+                  "context"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "const": "compare_plans"
+                  },
+                  "context": {
+                    "type": "object",
+                    "properties": {
+                      "amount": {
+                        "default": 10000,
+                        "type": "number",
+                        "minimum": 100,
+                        "maximum": 1000000,
+                        "$ref": "#/$defs/__schema6"
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "name",
+                  "context"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "const": "show_transactions"
+                  },
+                  "context": {
+                    "type": "object",
+                    "properties": {
+                      "month": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "pattern": "^20\\d{2}-(0[1-9]|1[0-2])$"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "kind": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "enum": [
+                              "income",
+                              "expense"
+                            ]
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "name",
+                  "context"
+                ],
+                "additionalProperties": false
+              }
+            ]
+          }
+        },
+        "required": [
+          "event"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "$id": "lazy-bank:finance-v1"
+  },
+  "event": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "oneOf": [
+      {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "const": "select_plan"
+          },
+          "context": {
+            "$ref": "#/$defs/__schema0"
+          }
+        },
+        "required": [
+          "name",
+          "context"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "const": "confirm_debt_payment"
+          },
+          "context": {
+            "type": "object",
+            "properties": {
+              "debt_id": {
+                "$ref": "#/$defs/__schema2"
+              },
+              "extra_payment": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "maximum": 100000,
+                "multipleOf": 0.01,
+                "$ref": "#/$defs/__schema1"
+              }
+            },
+            "required": [
+              "debt_id",
+              "extra_payment"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "name",
+          "context"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "const": "simulate_investment"
+          },
+          "context": {
+            "$ref": "#/$defs/__schema0"
+          }
+        },
+        "required": [
+          "name",
+          "context"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "const": "simulate_debt"
+          },
+          "context": {
+            "type": "object",
+            "properties": {
+              "debt_id": {
+                "$ref": "#/$defs/__schema2"
+              },
+              "extra_payment": {
+                "default": 500,
+                "type": "number",
+                "minimum": 0,
+                "maximum": 100000,
+                "$ref": "#/$defs/__schema1"
+              }
+            },
+            "required": [
+              "debt_id"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "name",
+          "context"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "const": "compare_plans"
+          },
+          "context": {
+            "type": "object",
+            "properties": {
+              "amount": {
+                "default": 10000,
+                "type": "number",
+                "minimum": 100,
+                "maximum": 1000000,
+                "$ref": "#/$defs/__schema1"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "name",
+          "context"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "const": "show_transactions"
+          },
+          "context": {
+            "type": "object",
+            "properties": {
+              "month": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^20\\d{2}-(0[1-9]|1[0-2])$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "kind": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "enum": [
+                      "income",
+                      "expense"
+                    ]
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "name",
+          "context"
+        ],
+        "additionalProperties": false
+      }
+    ],
+    "$defs": {
+      "__schema0": {
+        "type": "object",
+        "properties": {
+          "plan_id": {
+            "type": "string",
+            "enum": [
+              "conservative",
+              "balanced",
+              "growth"
+            ]
+          },
+          "amount": {
+            "default": 10000,
+            "type": "number",
+            "minimum": 100,
+            "maximum": 1000000,
+            "$ref": "#/$defs/__schema1"
+          },
+          "monthly_contribution": {
+            "default": 1000,
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100000,
+            "$ref": "#/$defs/__schema1"
+          },
+          "months": {
+            "default": 24,
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 120
+          }
+        },
+        "required": [
+          "plan_id"
+        ],
+        "additionalProperties": false
+      },
+      "__schema1": {
+        "type": "number"
+      },
+      "__schema2": {
+        "type": "string",
+        "enum": [
+          "card-classic",
+          "personal-loan",
+          "laptop"
+        ]
+      }
+    }
+  },
+  "message": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "anyOf": [
+      {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "string",
+            "const": "v0.9"
+          },
+          "createSurface": {
+            "type": "object",
+            "properties": {
+              "surfaceId": {
+                "$ref": "#/$defs/__schema0"
+              },
+              "catalogId": {
+                "type": "string",
+                "const": "lazy-bank:finance-v1"
+              }
+            },
+            "required": [
+              "surfaceId",
+              "catalogId"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "version",
+          "createSurface"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "string",
+            "const": "v0.9"
+          },
+          "updateDataModel": {
+            "type": "object",
+            "properties": {
+              "surfaceId": {
+                "$ref": "#/$defs/__schema0"
+              },
+              "path": {
+                "type": "string",
+                "const": "/"
+              },
+              "value": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {}
+              }
+            },
+            "required": [
+              "surfaceId",
+              "path",
+              "value"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "version",
+          "updateDataModel"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "string",
+            "const": "v0.9"
+          },
+          "updateComponents": {
+            "type": "object",
+            "properties": {
+              "surfaceId": {
+                "$ref": "#/$defs/__schema0"
+              },
+              "components": {
+                "maxItems": 100,
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/__schema1"
+                }
+              }
+            },
+            "required": [
+              "surfaceId",
+              "components"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "version",
+          "updateComponents"
+        ],
+        "additionalProperties": false
+      }
+    ],
+    "$defs": {
+      "__schema0": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 100
+      },
+      "__schema1": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "$ref": "#/$defs/__schema2"
+              },
+              "transactionalAction": {
+                "$ref": "#/$defs/__schema3"
+              },
+              "component": {
+                "type": "string",
+                "const": "Column"
+              },
+              "children": {
+                "maxItems": 100,
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/__schema12"
+                }
+              }
+            },
+            "required": [
+              "id",
+              "component",
+              "children"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "$ref": "#/$defs/__schema2"
+              },
+              "transactionalAction": {
+                "$ref": "#/$defs/__schema3"
+              },
+              "component": {
+                "type": "string",
+                "const": "Row"
+              },
+              "children": {
+                "maxItems": 100,
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/__schema13"
+                }
+              }
+            },
+            "required": [
+              "id",
+              "component",
+              "children"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "$ref": "#/$defs/__schema2"
+              },
+              "transactionalAction": {
+                "$ref": "#/$defs/__schema3"
+              },
+              "component": {
+                "type": "string",
+                "const": "Text"
+              },
+              "text": {
+                "$ref": "#/$defs/__schema14"
+              },
+              "variant": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "component",
+              "text"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "component": {
+                "type": "string",
+                "const": "Notice"
+              },
+              "text": {
+                "$ref": "#/$defs/__schema14"
+              }
+            },
+            "required": [
+              "id",
+              "component",
+              "text"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "$ref": "#/$defs/__schema2"
+              },
+              "transactionalAction": {
+                "$ref": "#/$defs/__schema3"
+              },
+              "component": {
+                "type": "string",
+                "const": "Metric"
+              },
+              "label": {
+                "$ref": "#/$defs/__schema15"
+              },
+              "value": {
+                "$ref": "#/$defs/__schema8"
+              },
+              "format": {
+                "type": "string",
+                "enum": [
+                  "currency",
+                  "number",
+                  "percent"
+                ]
+              },
+              "tone": {
+                "type": "string"
+              },
+              "detail": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "component",
+              "label",
+              "value"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "$ref": "#/$defs/__schema2"
+              },
+              "transactionalAction": {
+                "$ref": "#/$defs/__schema3"
+              },
+              "component": {
+                "type": "string",
+                "const": "FinancialChart"
+              },
+              "title": {
+                "$ref": "#/$defs/__schema15"
+              },
+              "data": {
+                "$ref": "#/$defs/__schema16"
+              },
+              "chartType": {
+                "type": "string",
+                "enum": [
+                  "bar",
+                  "line",
+                  "doughnut"
+                ]
+              },
+              "palette": {
+                "minItems": 1,
+                "maxItems": 12,
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/__schema17"
+                }
+              },
+              "action": {
+                "$ref": "#/$defs/__schema18"
+              }
+            },
+            "required": [
+              "id",
+              "component",
+              "title",
+              "data",
+              "chartType"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "$ref": "#/$defs/__schema2"
+              },
+              "transactionalAction": {
+                "$ref": "#/$defs/__schema3"
+              },
+              "component": {
+                "type": "string",
+                "const": "DataTable"
+              },
+              "title": {
+                "$ref": "#/$defs/__schema15"
+              },
+              "data": {
+                "$ref": "#/$defs/__schema16"
+              },
+              "columns": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "key": {
+                      "type": "string"
+                    },
+                    "label": {
+                      "$ref": "#/$defs/__schema15"
+                    },
+                    "format": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "key",
+                    "label"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "action": {
+                "$ref": "#/$defs/__schema18"
+              }
+            },
+            "required": [
+              "id",
+              "component",
+              "title",
+              "data",
+              "columns"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "$ref": "#/$defs/__schema2"
+              },
+              "transactionalAction": {
+                "$ref": "#/$defs/__schema3"
+              },
+              "component": {
+                "type": "string",
+                "const": "Button"
+              },
+              "text": {
+                "$ref": "#/$defs/__schema14"
+              },
+              "action": {
+                "$ref": "#/$defs/__schema19"
+              }
+            },
+            "required": [
+              "id",
+              "component",
+              "text",
+              "action"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "$ref": "#/$defs/__schema2"
+              },
+              "transactionalAction": {
+                "$ref": "#/$defs/__schema9"
+              },
+              "component": {
+                "type": "string",
+                "const": "PlanCard"
+              },
+              "data": {
+                "$ref": "#/$defs/__schema16"
+              },
+              "amount": {
+                "$ref": "#/$defs/__schema8"
+              },
+              "action": {
+                "$ref": "#/$defs/__schema18"
+              }
+            },
+            "required": [
+              "id",
+              "transactionalAction",
+              "component",
+              "data"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "$ref": "#/$defs/__schema2"
+              },
+              "transactionalAction": {
+                "$ref": "#/$defs/__schema4"
+              },
+              "component": {
+                "type": "string",
+                "const": "DebtCard"
+              },
+              "data": {
+                "$ref": "#/$defs/__schema16"
+              },
+              "action": {
+                "$ref": "#/$defs/__schema18"
+              }
+            },
+            "required": [
+              "id",
+              "transactionalAction",
+              "component",
+              "data"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "$ref": "#/$defs/__schema2"
+              },
+              "transactionalAction": {
+                "$ref": "#/$defs/__schema3"
+              },
+              "component": {
+                "type": "string",
+                "const": "Simulator"
+              },
+              "data": {
+                "$ref": "#/$defs/__schema16"
+              },
+              "action": {
+                "$ref": "#/$defs/__schema19"
+              }
+            },
+            "required": [
+              "id",
+              "component",
+              "data",
+              "action"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "$ref": "#/$defs/__schema2"
+              },
+              "transactionalAction": {
+                "$ref": "#/$defs/__schema3"
+              },
+              "component": {
+                "type": "string",
+                "const": "BudgetList"
+              },
+              "title": {
+                "$ref": "#/$defs/__schema15"
+              },
+              "data": {
+                "$ref": "#/$defs/__schema16"
+              },
+              "action": {
+                "$ref": "#/$defs/__schema18"
+              }
+            },
+            "required": [
+              "id",
+              "component",
+              "data"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "$ref": "#/$defs/__schema2"
+              },
+              "transactionalAction": {
+                "$ref": "#/$defs/__schema3"
+              },
+              "component": {
+                "type": "string",
+                "const": "GoalList"
+              },
+              "title": {
+                "$ref": "#/$defs/__schema15"
+              },
+              "data": {
+                "$ref": "#/$defs/__schema16"
+              },
+              "action": {
+                "$ref": "#/$defs/__schema18"
+              }
+            },
+            "required": [
+              "id",
+              "component",
+              "data"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "__schema2": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 100
+      },
+      "__schema3": {
+        "oneOf": [
+          {
+            "$ref": "#/$defs/__schema4"
+          },
+          {
+            "$ref": "#/$defs/__schema9"
+          }
+        ]
+      },
+      "__schema4": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "$ref": "#/$defs/__schema5"
+          },
+          "kind": {
+            "type": "string",
+            "const": "mutation"
+          },
+          "event": {
+            "$ref": "#/$defs/__schema6"
+          }
+        },
+        "required": [
+          "label",
+          "kind",
+          "event"
+        ],
+        "additionalProperties": false
+      },
+      "__schema5": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 200
+      },
+      "__schema6": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "const": "confirm_debt_payment"
+          },
+          "context": {
+            "type": "object",
+            "properties": {
+              "debt_id": {
+                "$ref": "#/$defs/__schema7"
+              },
+              "extra_payment": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "maximum": 100000,
+                "multipleOf": 0.01,
+                "$ref": "#/$defs/__schema8"
+              }
+            },
+            "required": [
+              "debt_id",
+              "extra_payment"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "name",
+          "context"
+        ],
+        "additionalProperties": false
+      },
+      "__schema7": {
+        "type": "string",
+        "enum": [
+          "card-classic",
+          "personal-loan",
+          "laptop"
+        ]
+      },
+      "__schema8": {
+        "type": "number"
+      },
+      "__schema9": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "$ref": "#/$defs/__schema5"
+          },
+          "kind": {
+            "type": "string",
+            "const": "simulation"
+          },
+          "event": {
+            "$ref": "#/$defs/__schema10"
+          }
+        },
+        "required": [
+          "label",
+          "kind",
+          "event"
+        ],
+        "additionalProperties": false
+      },
+      "__schema10": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "const": "select_plan"
+          },
+          "context": {
+            "$ref": "#/$defs/__schema11"
+          }
+        },
+        "required": [
+          "name",
+          "context"
+        ],
+        "additionalProperties": false
+      },
+      "__schema11": {
+        "type": "object",
+        "properties": {
+          "plan_id": {
+            "type": "string",
+            "enum": [
+              "conservative",
+              "balanced",
+              "growth"
+            ]
+          },
+          "amount": {
+            "default": 10000,
+            "type": "number",
+            "minimum": 100,
+            "maximum": 1000000,
+            "$ref": "#/$defs/__schema8"
+          },
+          "monthly_contribution": {
+            "default": 1000,
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100000,
+            "$ref": "#/$defs/__schema8"
+          },
+          "months": {
+            "default": 24,
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 120
+          }
+        },
+        "required": [
+          "plan_id"
+        ],
+        "additionalProperties": false
+      },
+      "__schema12": {
+        "type": "string"
+      },
+      "__schema13": {
+        "type": "string"
+      },
+      "__schema14": {
+        "type": "string",
+        "maxLength": 4000
+      },
+      "__schema15": {
+        "type": "string"
+      },
+      "__schema16": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "format": "starts_with",
+            "pattern": "^\\/.*"
+          }
+        },
+        "required": [
+          "path"
+        ],
+        "additionalProperties": false
+      },
+      "__schema17": {
+        "type": "string",
+        "pattern": "^#[0-9a-fA-F]{6}$"
+      },
+      "__schema18": {
+        "$ref": "#/$defs/__schema19"
+      },
+      "__schema19": {
+        "type": "object",
+        "properties": {
+          "event": {
+            "oneOf": [
+              {
+                "$ref": "#/$defs/__schema10"
+              },
+              {
+                "$ref": "#/$defs/__schema6"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "const": "simulate_investment"
+                  },
+                  "context": {
+                    "$ref": "#/$defs/__schema11"
+                  }
+                },
+                "required": [
+                  "name",
+                  "context"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "const": "simulate_debt"
+                  },
+                  "context": {
+                    "type": "object",
+                    "properties": {
+                      "debt_id": {
+                        "$ref": "#/$defs/__schema7"
+                      },
+                      "extra_payment": {
+                        "default": 500,
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 100000,
+                        "$ref": "#/$defs/__schema8"
+                      }
+                    },
+                    "required": [
+                      "debt_id"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "name",
+                  "context"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "const": "compare_plans"
+                  },
+                  "context": {
+                    "type": "object",
+                    "properties": {
+                      "amount": {
+                        "default": 10000,
+                        "type": "number",
+                        "minimum": 100,
+                        "maximum": 1000000,
+                        "$ref": "#/$defs/__schema8"
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "name",
+                  "context"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "const": "show_transactions"
+                  },
+                  "context": {
+                    "type": "object",
+                    "properties": {
+                      "month": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "pattern": "^20\\d{2}-(0[1-9]|1[0-2])$"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "kind": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "enum": [
+                              "income",
+                              "expense"
+                            ]
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "name",
+                  "context"
+                ],
+                "additionalProperties": false
+              }
+            ]
+          }
+        },
+        "required": [
+          "event"
+        ],
+        "additionalProperties": false
+      }
+    }
+  }
+}

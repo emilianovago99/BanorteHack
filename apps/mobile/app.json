@@ -1,13 +1,13 @@
 {
   "expo": {
-    "name": "BanorteHack",
-    "slug": "banortehack",
-    "scheme": "banortehack",
+    "name": "Lazy Bank",
+    "slug": "lazy-bank",
+    "scheme": "lazy-bank",
     "version": "0.1.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "ios": { "supportsTablet": true },
-    "android": { "package": "com.banortehack.demo" },
+    "android": { "package": "com.lazybank.demo" },
     "plugins": ["./plugins/with-short-cmake"]
   }
 }

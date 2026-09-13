@@ -3,10 +3,10 @@ requires = ["setuptools>=75"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "banortehack-ai"
+name = "lazy-bank-ai"
 version = "0.1.0"
 requires-python = ">=3.10"
-dependencies = ["fastapi>=0.115,<1", "uvicorn[standard]>=0.34,<1", "pydantic-settings>=2.8,<3", "mcp>=1.9,<2", "langchain-google-genai>=2,<5"]
+dependencies = ["fastapi>=0.115,<1", "uvicorn[standard]>=0.34,<1", "pydantic-settings>=2.8,<3", "mcp>=1.9,<2", "langchain-google-genai>=2,<5", "jsonschema>=4,<5"]
 
 [project.optional-dependencies]
 integrations = ["psycopg[binary]>=3.2,<4", "pymongo>=4.11,<5"]
@@ -17,3 +17,6 @@ include = ["app*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.setuptools.package-data]
+app = ["a2ui_contract.json"]

@@ -1,1 +1,1 @@
-"""Servicio de IA y conectores de datos de BanorteHack."""
+"""Servicio de IA y conectores de datos de Lazy Bank."""

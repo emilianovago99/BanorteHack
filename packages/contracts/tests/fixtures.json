@@ -1,0 +1,338 @@
+[
+  {
+    "name": "analytical chart",
+    "kind": "node",
+    "value": {
+      "id": "chart",
+      "component": "FinancialChart",
+      "title": "Gastos",
+      "chartType": "bar",
+      "data": {
+        "path": "/chart"
+      }
+    },
+    "valid": true
+  },
+  {
+    "name": "actionable chart",
+    "kind": "node",
+    "value": {
+      "id": "chart",
+      "component": "FinancialChart",
+      "title": "Gastos",
+      "chartType": "bar",
+      "data": {
+        "path": "/chart"
+      },
+      "transactionalAction": {
+        "label": "Confirmar abono",
+        "kind": "mutation",
+        "event": {
+          "name": "confirm_debt_payment",
+          "context": {
+            "debt_id": "laptop",
+            "extra_payment": 500
+          }
+        }
+      }
+    },
+    "valid": true
+  },
+  {
+    "name": "debt",
+    "kind": "node",
+    "value": {
+      "id": "debt",
+      "component": "DebtCard",
+      "data": {
+        "path": "/debt"
+      },
+      "transactionalAction": {
+        "label": "Confirmar abono",
+        "kind": "mutation",
+        "event": {
+          "name": "confirm_debt_payment",
+          "context": {
+            "debt_id": "laptop",
+            "extra_payment": 500
+          }
+        }
+      }
+    },
+    "valid": true
+  },
+  {
+    "name": "plan",
+    "kind": "node",
+    "value": {
+      "id": "plan",
+      "component": "PlanCard",
+      "data": {
+        "path": "/plan"
+      },
+      "transactionalAction": {
+        "label": "Explorar plan",
+        "kind": "simulation",
+        "event": {
+          "name": "select_plan",
+          "context": {
+            "plan_id": "balanced"
+          }
+        }
+      }
+    },
+    "valid": true
+  },
+  {
+    "name": "debt missing closing action",
+    "kind": "node",
+    "value": {
+      "id": "debt",
+      "component": "DebtCard",
+      "data": {
+        "path": "/debt"
+      }
+    },
+    "valid": false
+  },
+  {
+    "name": "plan missing closing action",
+    "kind": "node",
+    "value": {
+      "id": "plan",
+      "component": "PlanCard",
+      "data": {
+        "path": "/plan"
+      }
+    },
+    "valid": false
+  },
+  {
+    "name": "plan cannot pay debt",
+    "kind": "node",
+    "value": {
+      "id": "plan",
+      "component": "PlanCard",
+      "data": {
+        "path": "/plan"
+      },
+      "transactionalAction": {
+        "label": "Confirmar abono",
+        "kind": "mutation",
+        "event": {
+          "name": "confirm_debt_payment",
+          "context": {
+            "debt_id": "laptop",
+            "extra_payment": 500
+          }
+        }
+      }
+    },
+    "valid": false
+  },
+  {
+    "name": "debt cannot just simulate",
+    "kind": "node",
+    "value": {
+      "id": "debt",
+      "component": "DebtCard",
+      "data": {
+        "path": "/debt"
+      },
+      "transactionalAction": {
+        "label": "Explorar plan",
+        "kind": "simulation",
+        "event": {
+          "name": "select_plan",
+          "context": {
+            "plan_id": "balanced"
+          }
+        }
+      }
+    },
+    "valid": false
+  },
+  {
+    "name": "notice",
+    "kind": "node",
+    "value": {
+      "id": "notice",
+      "component": "Notice",
+      "text": "¿Qué necesitas?"
+    },
+    "valid": true
+  },
+  {
+    "name": "notice cannot mutate",
+    "kind": "node",
+    "value": {
+      "id": "notice",
+      "component": "Notice",
+      "text": "?",
+      "transactionalAction": {
+        "label": "Confirmar abono",
+        "kind": "mutation",
+        "event": {
+          "name": "confirm_debt_payment",
+          "context": {
+            "debt_id": "laptop",
+            "extra_payment": 500
+          }
+        }
+      }
+    },
+    "valid": false
+  },
+  {
+    "name": "unknown tool",
+    "kind": "event",
+    "value": {
+      "name": "execute_transfer",
+      "context": {}
+    },
+    "valid": false
+  },
+  {
+    "name": "payment 0",
+    "kind": "event",
+    "value": {
+      "name": "confirm_debt_payment",
+      "context": {
+        "debt_id": "laptop",
+        "extra_payment": 0
+      }
+    },
+    "valid": false
+  },
+  {
+    "name": "payment -1",
+    "kind": "event",
+    "value": {
+      "name": "confirm_debt_payment",
+      "context": {
+        "debt_id": "laptop",
+        "extra_payment": -1
+      }
+    },
+    "valid": false
+  },
+  {
+    "name": "payment 0.001",
+    "kind": "event",
+    "value": {
+      "name": "confirm_debt_payment",
+      "context": {
+        "debt_id": "laptop",
+        "extra_payment": 0.001
+      }
+    },
+    "valid": false
+  },
+  {
+    "name": "payment 100001",
+    "kind": "event",
+    "value": {
+      "name": "confirm_debt_payment",
+      "context": {
+        "debt_id": "laptop",
+        "extra_payment": 100001
+      }
+    },
+    "valid": false
+  },
+  {
+    "name": "payment True",
+    "kind": "event",
+    "value": {
+      "name": "confirm_debt_payment",
+      "context": {
+        "debt_id": "laptop",
+        "extra_payment": true
+      }
+    },
+    "valid": false
+  },
+  {
+    "name": "payment 500",
+    "kind": "event",
+    "value": {
+      "name": "confirm_debt_payment",
+      "context": {
+        "debt_id": "laptop",
+        "extra_payment": "500"
+      }
+    },
+    "valid": false
+  },
+  {
+    "name": "payment 0.29",
+    "kind": "event",
+    "value": {
+      "name": "confirm_debt_payment",
+      "context": {
+        "debt_id": "laptop",
+        "extra_payment": 0.29
+      }
+    },
+    "valid": true
+  },
+  {
+    "name": "payment 500.25",
+    "kind": "event",
+    "value": {
+      "name": "confirm_debt_payment",
+      "context": {
+        "debt_id": "laptop",
+        "extra_payment": 500.25
+      }
+    },
+    "valid": true
+  },
+  {
+    "name": "payment missing amount",
+    "kind": "event",
+    "value": {
+      "name": "confirm_debt_payment",
+      "context": {
+        "debt_id": "laptop"
+      }
+    },
+    "valid": false
+  },
+  {
+    "name": "simulation default",
+    "kind": "event",
+    "value": {
+      "name": "simulate_debt",
+      "context": {
+        "debt_id": "laptop"
+      }
+    },
+    "valid": true
+  },
+  {
+    "name": "investment invalid months",
+    "kind": "event",
+    "value": {
+      "name": "select_plan",
+      "context": {
+        "plan_id": "balanced",
+        "months": 1.5
+      }
+    },
+    "valid": false
+  },
+  {
+    "name": "extra context",
+    "kind": "event",
+    "value": {
+      "name": "confirm_debt_payment",
+      "context": {
+        "debt_id": "laptop",
+        "extra_payment": 500,
+        "tool": "evil"
+      }
+    },
+    "valid": false
+  }
+]

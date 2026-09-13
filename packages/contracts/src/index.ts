@@ -1,4 +1,7 @@
-export type FinancialDomain = 'resumen' | 'deudas' | 'ingresos' | 'gastos' | 'inversiones' | 'presupuestos' | 'movimientos' | 'suscripciones';
+import { z } from 'zod';
+import { uiActionSchema } from './a2ui';
+export * from './a2ui';
+export type FinancialDomain = 'resumen' | 'deudas' | 'ingresos' | 'gastos' | 'inversiones' | 'presupuestos' | 'movimientos' | 'suscripciones' | 'clarificacion';
 export type FinancialAction = 'invertir' | 'pagar' | 'transferir';
 
 // Resumen de gráfica para clientes que no renderizan el catálogo completo.
@@ -43,10 +46,7 @@ export interface AccountSummary {
   dataset?: { start_date: string; end_date: string; transaction_count: number; profile: string };
 }
 
-export interface UIAction {
-  version: 'v0.9';
-  action: { name: string; surfaceId: string; sourceComponentId: string; timestamp: string; context: Record<string, unknown> };
-}
+export type UIAction = z.infer<typeof uiActionSchema>;
 
 export interface PublicConfig {
   auth: {

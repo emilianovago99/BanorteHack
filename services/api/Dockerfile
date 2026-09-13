@@ -6,7 +6,7 @@ COPY apps/mobile/package.json ./apps/mobile/package.json
 COPY packages/contracts/package.json ./packages/contracts/package.json
 COPY packages/visual-engine/package.json ./packages/visual-engine/package.json
 COPY services/api/package.json ./services/api/package.json
-RUN npm ci --omit=dev --workspace @banortehack/api --include-workspace-root=false
+RUN npm ci --omit=dev --workspace @lazy-bank/api --include-workspace-root=false
 COPY services/api/src ./services/api/src
 USER node
 EXPOSE 3001

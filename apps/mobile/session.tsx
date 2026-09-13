@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useState, type React
 import { LoginScreen } from './ui';
 import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
-import type { PublicConfig } from '@banortehack/contracts';
+import type { PublicConfig } from '@lazy-bank/contracts';
 
 WebBrowser.maybeCompleteAuthSession();
 const api = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3001';
@@ -41,7 +41,7 @@ async function fetchAPI(path: string, init?: RequestInit) {
 const demoRequest: Session['request'] = async (path, init) => checkResponse(await fetchAPI(path, init));
 
 function AuthenticatedSession({ config, children }: { config: PublicConfig; children: ReactNode }) {
-  const redirectUri = AuthSession.makeRedirectUri({ native: 'banortehack://auth/callback', scheme: 'banortehack', path: 'auth/callback' });
+  const redirectUri = AuthSession.makeRedirectUri({ native: 'lazy-bank://auth/callback', scheme: 'lazy-bank', path: 'auth/callback' });
   const [token, setToken] = useState<{ value: string; expiresAt: number }>();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');

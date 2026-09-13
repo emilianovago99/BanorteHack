@@ -1,6 +1,6 @@
 import { Auth0Provider, useAuth0 } from '@auth0/auth0-react';
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
-import type { PublicConfig } from '@banortehack/contracts';
+import type { PublicConfig } from '@lazy-bank/contracts';
 
 interface Session {
   request: (path: string, init?: RequestInit) => Promise<Response>;

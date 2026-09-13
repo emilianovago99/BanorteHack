@@ -19,7 +19,7 @@ async def lifespan(app):
             yield
 
 
-app = FastAPI(title="BanorteHack Financial Intelligence", version="0.2.0", lifespan=lifespan)
+app = FastAPI(title="Lazy Bank Financial Intelligence", version="0.2.0", lifespan=lifespan)
 
 
 @app.get("/health")

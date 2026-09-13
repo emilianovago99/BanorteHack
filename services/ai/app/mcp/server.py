@@ -3,7 +3,7 @@ from mcp.server.fastmcp import FastMCP
 from app.data.repository import repository
 from app.data.simulations import investment_plans, simulate_investment, debt_payoff
 
-mcp = FastMCP("BanorteHack Financial Intelligence")
+mcp = FastMCP("Lazy Bank Financial Intelligence")
 
 
 @mcp.tool()

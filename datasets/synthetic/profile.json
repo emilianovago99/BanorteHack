@@ -6,7 +6,7 @@
   "start_date": "2024-01-01",
   "end_date": "2026-08-31",
   "default_month": "2026-08",
-  "transaction_count": 11602,
+  "transaction_count": 11606,
   "opening_balance_cents": 4200000,
   "accounts": [
     {
@@ -43,7 +43,7 @@
     {
       "id": "personal-loan",
       "name": "Crédito personal",
-      "balance": 48000,
+      "balance": 46500.0,
       "annual_rate": 0.22,
       "minimum_payment": 2100,
       "due_day": 5,
@@ -52,7 +52,7 @@
     {
       "id": "laptop",
       "name": "Laptop · meses sin intereses",
-      "balance": 8400,
+      "balance": 7900.0,
       "annual_rate": 0,
       "minimum_payment": 1400,
       "due_day": 18,

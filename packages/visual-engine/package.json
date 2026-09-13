@@ -1,12 +1,12 @@
 {
-  "name": "@banortehack/visual-engine",
+  "name": "@lazy-bank/visual-engine",
   "version": "0.1.0",
   "private": true,
   "type": "module",
   "exports": { ".": "./src/index.tsx", "./protocol": "./src/protocol.ts" },
   "scripts": { "typecheck": "tsc --noEmit" },
   "dependencies": {
-    "@banortehack/contracts": "0.1.0",
+    "@lazy-bank/contracts": "0.1.0",
     "chart.js": "^4.5.0",
     "react-chartjs-2": "^5.3.0",
     "zod": "^4.0.0"
