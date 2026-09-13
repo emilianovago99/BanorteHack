@@ -7,7 +7,7 @@
     "start_date": "2024-01-01",
     "end_date": "2026-08-31",
     "default_month": "2026-08",
-    "transaction_count": 11606,
+    "transaction_count": 11613,
     "opening_balance_cents": 4200000,
     "accounts": [
       {
@@ -53,7 +53,7 @@
       {
         "id": "laptop",
         "name": "Laptop · meses sin intereses",
-        "balance": 8400,
+        "balance": 7900.0,
         "annual_rate": 0,
         "minimum_payment": 1400,
         "due_day": 18,
@@ -83,7 +83,7 @@
       {
         "id": "balanced",
         "name": "Plan Equilibrado",
-        "value": 20000.010000000002
+        "value": 73000.01
       },
       {
         "id": "conservative",
@@ -195,6 +195,169 @@
         "transaction_id": "txn-4a7489657de34fc094b075c9ac256947",
         "confirmed": true,
         "balance_after": 619298.45
+      }
+    },
+    {
+      "plan_id": "balanced",
+      "created_at": 1789297425.0759544,
+      "row": {
+        "id": "txn-c8cef0d44ce74604b2e040d0bfd39bee",
+        "date": "2026-08-31",
+        "kind": "expense",
+        "amount_cents": 1000000,
+        "merchant": "Plan Equilibrado",
+        "category": "Inversiones",
+        "account_id": "checking",
+        "city": "Monterrey",
+        "method": "SPEI",
+        "recurring": 0,
+        "description": "Inversión confirmada · balanced"
+      },
+      "result": {
+        "transaction_id": "txn-c8cef0d44ce74604b2e040d0bfd39bee",
+        "confirmed": true,
+        "balance_after": 609298.45
+      }
+    },
+    {
+      "debt_id": "laptop",
+      "created_at": 1789297576.3085558,
+      "row": {
+        "id": "txn-dd5daf8465c746bfa591c6ed79ee0d8e",
+        "date": "2026-08-31",
+        "kind": "expense",
+        "amount_cents": 50000,
+        "merchant": "Laptop · meses sin intereses",
+        "category": "Créditos",
+        "account_id": "checking",
+        "city": "Monterrey",
+        "method": "SPEI",
+        "recurring": 0,
+        "description": "Abono único confirmado · laptop"
+      },
+      "result": {
+        "transaction_id": "txn-dd5daf8465c746bfa591c6ed79ee0d8e",
+        "confirmed": true,
+        "balance_after": 608798.45,
+        "debt_after": {
+          "debt_id": "laptop",
+          "balance": 7900.0
+        }
+      }
+    },
+    {
+      "operation_id": "4f2ea59be03c3fb0a5128c3d1bf1a0ae10d861c1da7cdd1e19123f0d6725b274",
+      "plan_id": "balanced",
+      "created_at": 1789298576.4757862,
+      "row": {
+        "id": "txn-1bea7c06e6e740a2aa588490f58db262",
+        "date": "2026-08-31",
+        "kind": "expense",
+        "amount_cents": 1000000,
+        "merchant": "Plan Equilibrado",
+        "category": "Inversiones",
+        "account_id": "checking",
+        "city": "Monterrey",
+        "method": "SPEI",
+        "recurring": 0,
+        "description": "Inversión confirmada · balanced"
+      },
+      "result": {
+        "transaction_id": "txn-1bea7c06e6e740a2aa588490f58db262",
+        "confirmed": true,
+        "balance_after": 598798.45
+      }
+    },
+    {
+      "operation_id": "f0671b28ee67812abdf6f4023655b959f952b22896fd8c8c418ae1b4be542324",
+      "plan_id": "balanced",
+      "created_at": 1789298733.4983883,
+      "row": {
+        "id": "txn-a374d5bc092a42fe9a9623b8dded5ff5",
+        "date": "2026-08-31",
+        "kind": "expense",
+        "amount_cents": 1000000,
+        "merchant": "Plan Equilibrado",
+        "category": "Inversiones",
+        "account_id": "checking",
+        "city": "Monterrey",
+        "method": "SPEI",
+        "recurring": 0,
+        "description": "Inversión confirmada · balanced"
+      },
+      "result": {
+        "transaction_id": "txn-a374d5bc092a42fe9a9623b8dded5ff5",
+        "confirmed": true,
+        "balance_after": 588798.45
+      }
+    },
+    {
+      "operation_id": "2a43f89f6371d5a69d50f1b5407fc5a289fa74478ecd0de14c8eb5ed239f1dc3",
+      "plan_id": "balanced",
+      "created_at": 1789298784.5341823,
+      "row": {
+        "id": "txn-a631fa31eb9c4cc39303e1277663b853",
+        "date": "2026-08-31",
+        "kind": "expense",
+        "amount_cents": 300000,
+        "merchant": "Plan Equilibrado",
+        "category": "Inversiones",
+        "account_id": "checking",
+        "city": "Monterrey",
+        "method": "SPEI",
+        "recurring": 0,
+        "description": "Inversión confirmada · balanced"
+      },
+      "result": {
+        "transaction_id": "txn-a631fa31eb9c4cc39303e1277663b853",
+        "confirmed": true,
+        "balance_after": 585798.45
+      }
+    },
+    {
+      "operation_id": "fbfb16a9510e5773683fca7592e08b024a35f4a1b6e0a67ca717459eed3903a8",
+      "plan_id": "balanced",
+      "created_at": 1789298798.3312402,
+      "row": {
+        "id": "txn-c44ce6e554994ed98bf83da317e820ae",
+        "date": "2026-08-31",
+        "kind": "expense",
+        "amount_cents": 1000000,
+        "merchant": "Plan Equilibrado",
+        "category": "Inversiones",
+        "account_id": "checking",
+        "city": "Monterrey",
+        "method": "SPEI",
+        "recurring": 0,
+        "description": "Inversión confirmada · balanced"
+      },
+      "result": {
+        "transaction_id": "txn-c44ce6e554994ed98bf83da317e820ae",
+        "confirmed": true,
+        "balance_after": 575798.45
+      }
+    },
+    {
+      "operation_id": "e343ac057853a82ca86c95896616d5ff0311379f170171ecbab0a1bbed2c3874",
+      "plan_id": "balanced",
+      "created_at": 1789298815.59302,
+      "row": {
+        "id": "txn-0d4337e0cc794a729c326cf5a20ecaa6",
+        "date": "2026-08-31",
+        "kind": "expense",
+        "amount_cents": 1000000,
+        "merchant": "Plan Equilibrado",
+        "category": "Inversiones",
+        "account_id": "checking",
+        "city": "Monterrey",
+        "method": "SPEI",
+        "recurring": 0,
+        "description": "Inversión confirmada · balanced"
+      },
+      "result": {
+        "transaction_id": "txn-0d4337e0cc794a729c326cf5a20ecaa6",
+        "confirmed": true,
+        "balance_after": 565798.45
       }
     }
   ]

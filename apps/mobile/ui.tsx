@@ -1,5 +1,5 @@
 import { createContext, useContext, type ReactNode } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export const themes = {
@@ -15,11 +15,17 @@ export function ActionButton({ title, onPress, disabled = false, secondary = fal
   return <Pressable accessibilityRole="button" accessibilityState={{ disabled }} onPress={onPress} disabled={disabled} style={({ pressed }) => [ui.button, { backgroundColor: secondary ? theme.soft : theme.accent, opacity: disabled ? .5 : pressed ? .8 : 1 }]}><Text style={[ui.buttonText, { color: secondary ? theme.accent : '#fff' }]}>{title}</Text></Pressable>;
 }
 export function Panel({ children }: { children: ReactNode }) { return <View style={ui.panel}>{children}</View>; }
+export function Brand() {
+  return <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }} accessible accessibilityLabel="LazyBank">
+    <Image source={require('./assets/icon.png')} style={{ width: 38, height: 38, borderRadius: 9 }} />
+    <Text style={ui.brand}>Lazy<Text style={{ color: '#263638', fontWeight: '400' }}>Bank</Text></Text>
+  </View>;
+}
 export function LoginScreen({ onLogin, busy, error, message, demo }: { onLogin?: () => void; busy?: boolean; error?: string; message?: string; demo?: boolean }) {
   return <SafeAreaView style={ui.page}><ScrollView contentContainerStyle={ui.login}>
-    <Text style={ui.brand}>BANORTE<Text style={{ color: '#263638', fontWeight: '400' }}>HACK</Text></Text>
+    <Brand />
     <View style={{ gap: 16, marginVertical: 30 }}><Text style={ui.eyebrow}>TU ESPACIO FINANCIERO</Text><Text style={ui.hero}>Tu dinero,{"\n"}con más claridad.</Text><Text style={ui.body}>Pregunta, descubre y construye una vista de tus finanzas a tu medida.</Text></View>
-    <Panel><Text style={ui.eyebrow}>BIENVENIDO A NORTE</Text><Text style={ui.title}>Inicia sesión</Text><Text style={ui.body}>{message ?? 'Un solo espacio para entender tus movimientos y explorar nuevas posibilidades.'}</Text>
+    <Panel><Text style={ui.eyebrow}>BIENVENIDO A LAZYBANK</Text><Text style={ui.title}>Inicia sesión</Text><Text style={ui.body}>{message ?? 'Un solo espacio para entender tus movimientos y explorar nuevas posibilidades.'}</Text>
       {busy && <ActivityIndicator color="#dc0030" accessibilityLabel="Conectando" />}
       {!!error && <Text accessibilityRole="alert" style={ui.error}>{error}</Text>}
       {onLogin && <ActionButton title={busy ? 'Conectando…' : demo ? 'Entrar a la demostración' : 'Iniciar sesión'} disabled={busy} onPress={onLogin} />}

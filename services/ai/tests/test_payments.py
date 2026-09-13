@@ -270,6 +270,92 @@ def test_investment_accepts_legacy_holdings_and_debt_payment_afterward(repo, dat
         restarted.db.close()
 
 
+@pytest.mark.parametrize("plan", ["conservative", "balanced", "growth"])
+def test_investment_debits_cash_credits_holdings_and_persists(repo, data_dir, plan):
+    before = repo.overview()
+    receipt = repo.apply_investment(plan, 1250.25, operation_id="investment-1")
+    after = repo.overview()
+    assert receipt["confirmed"] is True
+    assert receipt["balance_after"] == pytest.approx(before["balance"] - 1250.25)
+    assert after["investments_total"] == pytest.approx(before["investments_total"] + 1250.25)
+    assert after["net_worth"] == pytest.approx(before["net_worth"])
+    restarted = FinancialRepository(data_dir)
+    try:
+        assert restarted.overview() == after
+        assert restarted.apply_investment(plan, 1250.25, operation_id="investment-1") == receipt
+    finally:
+        restarted.db.close()
+
+
+@pytest.mark.parametrize("kind", ["investment", "payment"])
+def test_distinct_confirmations_move_money_but_retries_do_not(repo, data_dir, monkeypatch, kind):
+    clock = [1000.0]
+    monkeypatch.setattr("app.data.repository.time.time", lambda: clock[0])
+    method, target = (repo.apply_investment, "balanced") if kind == "investment" else (repo.apply_debt_payment, "card-classic")
+    before = repo.overview()["balance"]
+    first = method(target, 100, operation_id="operation-1")
+    second = method(target, 100, operation_id="operation-2")
+    assert first["transaction_id"] != second["transaction_id"]
+    assert second["balance_after"] == pytest.approx(before - 200)
+    clock[0] += 60
+    assert method(target, 100, operation_id="operation-1")["transaction_id"] == first["transaction_id"]
+    assert repo.overview()["balance"] == pytest.approx(before - 200)
+    with pytest.raises(ValueError, match="otros parámetros"):
+        method(target, 200, operation_id="operation-1")
+    assert len(repo.payments) == 2
+
+
+def test_investment_retry_after_using_entire_balance_is_successful(repo):
+    before = repo.overview()["balance"]
+    receipt = repo.apply_investment("balanced", before, operation_id="all-cash")
+    assert receipt["balance_after"] == 0
+    assert repo.apply_investment("balanced", before, operation_id="all-cash") == receipt
+    with pytest.raises(ValueError, match="insuficiente"):
+        repo.apply_investment("balanced", 100, operation_id="new-investment")
+    assert repo.overview()["balance"] == 0
+    assert len(repo.payments) == 1
+
+
+@pytest.mark.parametrize("failed_file", ["profile.json", "payments.json"])
+def test_failed_investment_does_not_change_cash_or_holdings(repo, data_dir, monkeypatch, failed_file):
+    before = repo.overview()
+    repo._atomic_write(repo.payments_path, {"profile": repo.profile, "payments": []})
+    write = repo._atomic_write
+    def fail(path, value):
+        if path.name == failed_file and (value.get("payments") or value.get("transaction_count", 0) > before["dataset"]["transaction_count"]):
+            raise OSError("injected storage failure")
+        write(path, value)
+    monkeypatch.setattr(repo, "_atomic_write", fail)
+    with pytest.raises(ValueError, match="guardar"):
+        repo.apply_investment("balanced", 100, operation_id="failed")
+    assert repo.overview() == before
+    restarted = FinancialRepository(data_dir)
+    try:
+        assert restarted.overview() == before
+    finally:
+        restarted.db.close()
+
+
+def test_gateway_simulation_and_two_separate_investments(gateway):
+    before = gateway.get("/api/account").json()["balance"]
+    receipts = []
+    for _ in range(2):
+        view = gateway.post("/api/chat", json={"message": "Quiero invertir $100"}).json()
+        card = next(node for node in view["a2ui"][2]["updateComponents"]["components"] if node["component"] == "PlanCard")
+        simulation = gateway.post("/api/actions", json=action_from(view, card)).json()
+        assert simulation["transaction"] is None
+        assert gateway.get("/api/account").json()["balance"] == before - 100 * len(receipts)
+        simulator = next(node for node in simulation["a2ui"][2]["updateComponents"]["components"] if node["component"] == "Simulator")
+        action = action_from(simulation, simulator, closing=True)
+        confirmed = gateway.post("/api/actions", json=action)
+        assert confirmed.status_code == 200, confirmed.text
+        receipts.append(confirmed.json()["transaction"])
+        # Browser/network retry of this confirmation returns the same operation.
+        assert gateway.post("/api/actions", json=action).json()["transaction"] == receipts[-1]
+    assert receipts[0]["transaction_id"] != receipts[1]["transaction_id"]
+    assert gateway.get("/api/account").json()["balance"] == before - 200
+
+
 def test_gateway_investment_then_debt_payload_executes_mutations(gateway, data_dir):
     before = gateway.get("/api/account").json()["balance"]
     view_response = gateway.post("/api/chat", json={"message": "Quiero invertir $100"})

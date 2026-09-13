@@ -1,13 +1,21 @@
 {
   "expo": {
-    "name": "Lazy Bank",
+    "name": "LazyBank",
     "slug": "lazy-bank",
     "scheme": "lazy-bank",
     "version": "0.1.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
+    "icon": "./assets/icon.png",
     "ios": { "supportsTablet": true },
-    "android": { "package": "com.lazybank.demo" },
+    "android": {
+      "package": "com.lazybank.demo",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "monochromeImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#dc0030"
+      }
+    },
     "plugins": ["./plugins/with-short-cmake"]
   }
 }

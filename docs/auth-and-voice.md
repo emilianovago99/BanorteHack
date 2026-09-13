@@ -38,7 +38,31 @@ Usar el `issuer` que publica `https://TU-TENANT.us.auth0.com/.well-known/openid-
 
 Para usar la app nativa, reconstruir un **development build** con el esquema `lazy-bank` (`npm run android --workspace @lazy-bank/mobile` o el equivalente iOS en macOS). Expo Go no sirve para probar este callback propio. Mantener `EXPO_PUBLIC_API_URL` apuntando a la API accesible por el teléfono.
 
+## Nombre e íconos de la app
+
+El nombre visible es **LazyBank**. El logo vectorial está en `apps/web/public/lazybank.svg`; los PNG para navegador, iPhone y Android se regeneran en Windows con `./scripts/generate-branding.ps1`.
+
+Si el celular conserva el nombre o ícono anterior, sincronizar el proyecto nativo generado y volver a compilar e instalar (recargar Metro no actualiza estos recursos):
+
+```powershell
+cd apps/mobile
+npx expo prebuild --platform android --no-install
+npm run android
+```
+
+La app actual usa el paquete `com.lazybank.demo`. Una instalación antigua con el paquete `com.banortehack.demo` puede seguir apareciendo como una app separada. En iOS, regenerar y compilar en macOS. Para un acceso web guardado en la pantalla de inicio, volver a agregarlo para que tome el nombre y el ícono nuevos.
+
 ## Voz
+
+La voz está desactivada en el celular mediante `MOBILE_VOICE_ENABLED = false` en `apps/mobile/features.ts`. El reproductor y la integración quedan preparados; no se muestra el control ni se solicita audio. Su activación futura requiere cambiar esa bandera y que la API publique voz disponible.
+
+## Confirmación y saldo de demostración
+
+Explorar planes o actualizar simulaciones no modifica el saldo. Al confirmar una inversión se descuenta el capital inicial del saldo disponible y se suma a las inversiones; los rendimientos y aportaciones futuras de la proyección no se depositan. Al confirmar un abono se descuentan el saldo disponible y la deuda.
+
+El móvil pide confirmar el monto antes de registrar el movimiento. Web y móvil consultan nuevamente la cuenta tras una confirmación y al volver al inicio o reactivar la app, para mostrar el saldo vigente. Los reintentos de una misma confirmación conservan su folio; una operación nueva, aunque tenga el mismo monto, genera otro movimiento. Los movimientos siguen siendo del perfil sintético compartido.
+
+### Servicio de voz
 
 La clave necesita permiso **Text to Speech** y acceso a la voz elegida. Después del login y de enviar un mensaje, pulsar **Escuchar respuesta**: la API genera un MP3 con ElevenLabs y el cliente lo reproduce. No se genera audio automáticamente al recibir mensajes.
 

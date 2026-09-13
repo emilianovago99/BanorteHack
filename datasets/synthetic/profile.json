@@ -6,7 +6,7 @@
   "start_date": "2024-01-01",
   "end_date": "2026-08-31",
   "default_month": "2026-08",
-  "transaction_count": 11606,
+  "transaction_count": 11613,
   "opening_balance_cents": 4200000,
   "accounts": [
     {
@@ -52,7 +52,7 @@
     {
       "id": "laptop",
       "name": "Laptop · meses sin intereses",
-      "balance": 8400,
+      "balance": 7900.0,
       "annual_rate": 0,
       "minimum_payment": 1400,
       "due_day": 18,
@@ -82,7 +82,7 @@
     {
       "id": "balanced",
       "name": "Plan Equilibrado",
-      "value": 20000.010000000002
+      "value": 73000.01
     },
     {
       "id": "conservative",

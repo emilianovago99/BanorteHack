@@ -55,15 +55,15 @@ def simulate_debt_payoff(debt_id: str, extra_payment: float = 500) -> dict:
 
 
 @mcp.tool()
-def confirm_debt_payment(debt_id: str, extra_payment: float) -> dict:
+def confirm_debt_payment(debt_id: str, extra_payment: float, operation_id: str | None = None) -> dict:
     """Confirma un abono único: registra el egreso y reduce la deuda en el dataset de demostración. Requiere confirmación explícita del usuario."""
-    return repository().apply_debt_payment(debt_id, extra_payment)
+    return repository().apply_debt_payment(debt_id, extra_payment, operation_id=operation_id)
 
 
 @mcp.tool()
-def confirm_investment(plan_id: str, amount: float) -> dict:
+def confirm_investment(plan_id: str, amount: float, operation_id: str | None = None) -> dict:
     """Confirma una inversión: registra el egreso y deduce el saldo."""
-    return repository().apply_investment(plan_id, amount)
+    return repository().apply_investment(plan_id, amount, operation_id=operation_id)
 
 
 @mcp.tool()

@@ -27,7 +27,7 @@ async function checkResponse(response: Response) {
 const demoRequest: Session['request'] = async (path, init) => checkResponse(await fetch(path, init));
 
 function LoginScreen({ demo = false, onLogin, error }: { demo?: boolean; onLogin: () => void; error?: boolean }) {
-  return <div className="login-shell"><section className="login-story"><a className="brand" href="/"><span className="brand-mark">L</span><span>LAZY <span className="brand-light">BANK</span></span></a><div><span className="eyebrow">TU ESPACIO FINANCIERO</span><h1>Tu dinero, con más claridad.</h1><p>Pregunta, descubre y construye una vista de tus finanzas a tu medida.</p></div></section><main className="login-card"><h2>Inicia sesión</h2>{error && <p role="alert">No se pudo iniciar sesión. Intenta de nuevo.</p>}<button onClick={onLogin}>{demo ? 'Entrar a la demostración' : 'Iniciar sesión'}</button></main></div>;
+  return <div className="login-shell"><section className="login-story"><a className="brand" href="/" aria-label="LazyBank"><img className="brand-mark" src="/lazybank.svg" alt="" /><span>Lazy<span className="brand-light">Bank</span></span></a><div><span className="eyebrow">TU ESPACIO FINANCIERO</span><h1>Tu dinero, con más claridad.</h1><p>Pregunta, descubre y construye una vista de tus finanzas a tu medida.</p></div></section><main className="login-card"><h2>Inicia sesión</h2>{error && <p role="alert">No se pudo iniciar sesión. Intenta de nuevo.</p>}<button onClick={onLogin}>{demo ? 'Entrar a la demostración' : 'Iniciar sesión'}</button></main></div>;
 }
 
 function AuthenticatedSession({ config, children }: { config: PublicConfig; children: ReactNode }) {

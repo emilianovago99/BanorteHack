@@ -2,6 +2,8 @@ from app.a2ui import Surface, TRANSACTION_COLUMNS, money
 from app.schemas import ChatResponse, Visualization, QueryPlan, SimulationInput, DebtInput, PaymentInput, ClientAction
 from app.planner import plan_query
 from app.mcp.client import FinancialQueryError
+from hashlib import sha256
+import json
 
 # Explicit MCP dispatch: incoming events can never choose an arbitrary tool.
 ACTION_TOOLS = {
@@ -171,6 +173,9 @@ async def answer(request, tools):
 async def handle_action(action, tools):
     action = ClientAction.model_validate(action.model_dump())
     context = action.context
+    # A retry of the same visible confirmation has one effect. A new surface
+    # represents a new operation, even for the same account, plan and amount.
+    operation_id = sha256(json.dumps([action.surfaceId, action.sourceComponentId, action.name, context], sort_keys=True).encode()).hexdigest()
     if action.name in ("select_plan", "simulate_investment"):
         params = SimulationInput.model_validate(context)
         data = await tools.call(ACTION_TOOLS[action.name], **params.model_dump())
@@ -203,7 +208,7 @@ async def handle_action(action, tools):
         return response(surface, f"En {data['debt']['name']}, añadir {money(params.extra_payment)} al mes reduce el plazo en {data['months_saved']} meses y los intereses en {money(data['interest_saved'])}.", "deudas", tools)
     if action.name == "confirm_debt_payment":
         params = PaymentInput.model_validate(context)
-        result = await tools.call(ACTION_TOOLS[action.name], **params.model_dump())
+        result = await tools.call(ACTION_TOOLS[action.name], **params.model_dump(), operation_id=operation_id)
         return confirmation_response(
             result, "Pago confirmado",
             f"Pago confirmado de {money(params.extra_payment)}. Tu saldo disponible es {money(result['balance_after'])}.",
@@ -212,7 +217,7 @@ async def handle_action(action, tools):
     if action.name == "confirm_investment":
         from app.schemas import InvestmentInput
         params = InvestmentInput.model_validate(context)
-        result = await tools.call(ACTION_TOOLS[action.name], **params.model_dump())
+        result = await tools.call(ACTION_TOOLS[action.name], **params.model_dump(), operation_id=operation_id)
         return confirmation_response(
             result, "Inversión confirmada",
             f"Inversión confirmada por {money(params.amount)}. Tu saldo disponible es {money(result['balance_after'])}.",

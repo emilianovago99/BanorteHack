@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 import { LoginScreen } from './ui';
+import { MOBILE_VOICE_ENABLED } from './features';
 import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
 import type { PublicConfig } from '@lazy-bank/contracts';
@@ -57,7 +58,8 @@ function AuthenticatedSession({ config, children }: { config: PublicConfig; chil
     setError('');
     let step = 'discovery';
     try {
-      const discovery = await AuthSession.fetchDiscoveryAsync(config.auth.issuer);
+      // Expo appends "/.well-known/..."; keep the API's canonical issuer unchanged.
+      const discovery = await AuthSession.fetchDiscoveryAsync(config.auth.issuer.replace(/\/+$/, ''));
       // Cada intento recibe un state y un verificador PKCE nuevos.
       const authRequest = new AuthSession.AuthRequest({
         clientId: config.auth.mobileClientId, redirectUri, responseType: AuthSession.ResponseType.Code,
@@ -108,7 +110,7 @@ function AuthenticatedSession({ config, children }: { config: PublicConfig; chil
   }
 
   if (!token) return <LoginScreen busy={busy} error={error} onLogin={() => void login()} />;
-  return <Context.Provider value={{ request, logout: () => { void logout(); }, voiceEnabled: config.voice.enabled, demo: false }}>{children}</Context.Provider>;
+  return <Context.Provider value={{ request, logout: () => { void logout(); }, voiceEnabled: MOBILE_VOICE_ENABLED && config.voice.enabled, demo: false }}>{children}</Context.Provider>;
 }
 
 export function MobileSessionProvider({ children }: { children: ReactNode }) {

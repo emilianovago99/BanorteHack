@@ -27,22 +27,31 @@ export function FinancialWorkspace() {
   const inFlight = useRef(false);
   const messageId = useRef(0);
   const latestRequestId = useRef(0);
+  const accountRequestId = useRef(0);
   // Retain conversational context even when the visual surface is discarded.
   const simulation = useRef<ChatResponse['simulation']>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const surfaceRef = useRef<HTMLElement>(null);
 
   const refreshBalance = useCallback(async () => {
+    const id = ++accountRequestId.current;
     setBalanceError('');
     try {
       const response = await request('/api/account');
-      setAccount(await response.json());
+      const next: AccountSummary = await response.json();
+      if (id === accountRequestId.current) setAccount(next);
     } catch (error) {
-      setBalanceError(error instanceof Error ? error.message : 'No se pudo cargar el saldo.');
+      if (id === accountRequestId.current) setBalanceError(error instanceof Error ? error.message : 'No se pudo cargar el saldo.');
     }
   }, [request]);
 
   useEffect(() => { void refreshBalance(); }, [refreshBalance]);
+  useEffect(() => {
+    const refresh = () => { if (document.visibilityState === 'visible' && !inFlight.current) void refreshBalance(); };
+    window.addEventListener('focus', refresh);
+    document.addEventListener('visibilitychange', refresh);
+    return () => { window.removeEventListener('focus', refresh); document.removeEventListener('visibilitychange', refresh); };
+  }, [refreshBalance]);
   useEffect(() => {
     inputRef.current?.focus();
   }, [viewMode]);
@@ -54,6 +63,7 @@ export function FinancialWorkspace() {
     setView(undefined);
     setViewMode('zero');
     setError('');
+    void refreshBalance();
   }
 
   async function query(text: string, action?: UIAction) {
@@ -72,7 +82,9 @@ export function FinancialWorkspace() {
       if (!Array.isArray(next.a2ui)) throw new Error('No se pudo generar la vista. Intenta otra consulta.');
       
       if (next.transaction?.confirmed) {
+        ++accountRequestId.current;
         setAccount(prev => prev ? { ...prev, balance: next.transaction!.balance_after } : prev);
+        void refreshBalance();
       }
       
       if (next.simulation) simulation.current = next.simulation;

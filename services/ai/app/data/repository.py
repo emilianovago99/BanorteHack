@@ -149,11 +149,23 @@ class FinancialRepository:
         rows = deepcopy(self.profile["debts"])
         return {"rows": rows, "total": sum(row["balance"] for row in rows)}
 
+    def _matching_operation(self, payment, operation_id, target_field, target_id, cents, now):
+        same_payload = payment.get(target_field) == target_id and payment["row"]["amount_cents"] == cents
+        if operation_id is not None:
+            if payment.get("operation_id") != operation_id:
+                return False
+            if not same_payload:
+                raise ValueError("La operación ya fue confirmada con otros parámetros.")
+            return True
+        # Compatibility for older callers that do not send an operation ID.
+        return same_payload and payment.get("operation_id") is None and 0 <= now - payment["created_at"] < 30
+
     @synchronized
-    def apply_debt_payment(self, debt_id, extra_payment):
+    def apply_debt_payment(self, debt_id, extra_payment, operation_id=None):
         """One-off demo payment; journal/profile persistence for one MCP process.
 
-        Identical debt/amount retries within 30 seconds return the same receipt.
+        Operation IDs return the same receipt across retries and restarts.
+        Legacy callers deduplicate identical debt/amount retries for 30 seconds.
         The source CSV remains the baseline; journal rows are replayed on startup.
         """
         try:
@@ -168,7 +180,7 @@ class FinancialRepository:
             raise ValueError("Crédito desconocido.")
         now = time.time()
         for payment in reversed(self.payments):
-            if payment.get("debt_id") == debt_id and payment["row"]["amount_cents"] == cents and 0 <= now - payment["created_at"] < 30:
+            if self._matching_operation(payment, operation_id, "debt_id", debt_id, cents, now):
                 return {**payment["result"], "balance_after": self.overview()["balance"],
                         "debt_after": {"debt_id": debt_id, "balance": debt["balance"]}}
         debt_cents = int(Decimal(str(debt["balance"])) * 100)
@@ -200,7 +212,7 @@ class FinancialRepository:
                 result = {"transaction_id": transaction_id, "confirmed": True,
                           "balance_after": self.overview()["balance"],
                           "debt_after": {"debt_id": debt_id, "balance": updated_debt["balance"]}}
-                payments = [*self.payments, {"debt_id": debt_id, "created_at": now, "row": row, "result": result}]
+                payments = [*self.payments, {"operation_id": operation_id, "debt_id": debt_id, "created_at": now, "row": row, "result": result}]
                 self._atomic_write(self.profile_path, updated_profile)
                 self._atomic_write(self.payments_path, {"profile": updated_profile, "payments": payments})
         except (OSError, sqlite3.Error):
@@ -218,23 +230,23 @@ class FinancialRepository:
         return deepcopy(result)
 
     @synchronized
-    def apply_investment(self, plan_id, amount):
+    def apply_investment(self, plan_id, amount, operation_id=None):
         try:
             amount_val = Decimal(str(amount))
         except (InvalidOperation, ValueError):
             raise ValueError("Monto inválido.")
         if not amount_val.is_finite() or not 0 < amount_val <= 1000000 or amount_val * 100 != (amount_val * 100).to_integral_value():
             raise ValueError("El monto debe ser positivo y máximo $1,000,000.")
-        if amount_val > Decimal(str(self.overview()["balance"])):
-            raise ValueError("Saldo disponible insuficiente.")
         cents = int(amount_val * 100)
         plan_names = {"conservative": "Plan Conservador", "balanced": "Plan Equilibrado", "growth": "Plan Crecimiento"}
         if plan_id not in plan_names:
             raise ValueError("Plan desconocido.")
         now = time.time()
         for payment in reversed(self.payments):
-            if payment.get("plan_id") == plan_id and payment["row"]["amount_cents"] == cents and 0 <= now - payment["created_at"] < 30:
+            if self._matching_operation(payment, operation_id, "plan_id", plan_id, cents, now):
                 return {**payment["result"], "balance_after": self.overview()["balance"]}
+        if amount_val > Decimal(str(self.overview()["balance"])):
+            raise ValueError("Saldo disponible insuficiente.")
         month = self.month()
         year, month_number = map(int, month.split("-"))
         transaction_id = "txn-" + uuid4().hex
@@ -248,7 +260,7 @@ class FinancialRepository:
         updated_profile = deepcopy(previous_profile)
         investment_entry = next((item for item in updated_profile["investments"] if item.get("id") == plan_id), None)
         if investment_entry:
-            investment_entry["value"] += float(amount_val)
+            investment_entry["value"] = float(Decimal(str(investment_entry["value"])) + amount_val)
         else:
             updated_profile["investments"].append({"id": plan_id, "name": plan_names[plan_id], "value": float(amount_val)})
         updated_profile["transaction_count"] += 1
@@ -260,7 +272,7 @@ class FinancialRepository:
                 self.profile = updated_profile
                 result = {"transaction_id": transaction_id, "confirmed": True,
                           "balance_after": self.overview()["balance"]}
-                payments = [*self.payments, {"plan_id": plan_id, "created_at": now, "row": row, "result": result}]
+                payments = [*self.payments, {"operation_id": operation_id, "plan_id": plan_id, "created_at": now, "row": row, "result": result}]
                 self._atomic_write(self.profile_path, updated_profile)
                 self._atomic_write(self.payments_path, {"profile": updated_profile, "payments": payments})
         except (OSError, sqlite3.Error):

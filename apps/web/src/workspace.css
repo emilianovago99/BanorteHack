@@ -21,7 +21,7 @@ svg{flex-shrink:0}
 .secondary{background:#fff;color:var(--red);border:1px solid #ebc6ce}
 .brand{display:flex;gap:14px;align-items:center;padding:0 12px;margin-bottom:30px;font-size:19px;font-weight:800;letter-spacing:1.5px;color:#d5002c;white-space:nowrap}
 .brand-light{font-weight:400;color:#39474a}
-.brand-mark{background:var(--red);color:#fff;display:grid;place-items:center;width:48px;height:53px;border-radius:12px 12px 12px 2px;font-family:serif;font-size:37px;font-style:italic;letter-spacing:-2px}
+.brand-mark{display:block;width:48px;height:48px;flex-shrink:0}
 .eyebrow{font-size:9px;letter-spacing:1.8px;font-weight:700;color:#98a4a5}
 .a2ui-column{display:flex;flex-direction:column;gap:20px}
 .a2ui-row{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:16px}
@@ -107,7 +107,7 @@ progress::-moz-progress-bar{background:#578d7d;border-radius:5px}
 }
 @media(max-width:1250px){
 .brand{font-size:16px;gap:11px}
-.brand-mark{width:38px;height:45px;font-size:30px}
+.brand-mark{width:38px;height:38px}
 .a2ui-row{gap:10px}
 .metric-card{padding:18px 13px}
 .metric-card>strong{font-size:20px}

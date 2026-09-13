@@ -1,9 +1,9 @@
 import { Component, useMemo, useState, type ReactNode } from 'react';
-import { ScrollView, Text, TextInput, View } from 'react-native';
+import { Alert, ScrollView, Text, TextInput, View } from 'react-native';
 import Svg, { Circle, Line, Polyline, Rect, Text as SvgText } from 'react-native-svg';
 import { z } from 'zod';
 import { parseSurface, seriesSchema, type Node, type Event } from '@lazy-bank/visual-engine/protocol';
-import { eventSchema, uiActionSchema, type UIAction } from '@lazy-bank/contracts';
+import { eventSchema, investmentInputSchema, paymentInputSchema, uiActionSchema, type TransactionalAction, type UIAction } from '@lazy-bank/contracts';
 import { ActionButton, Panel, ui, useTheme } from './ui';
 
 const number = z.number().finite();
@@ -44,7 +44,7 @@ function Chart({ node, value }: { node: Extract<Node, { component: 'FinancialCha
 }
 function ViewlessGrid({ y, label }: { y: number; label: string }) { return <><Line x1={44} x2={302} y1={y} y2={y} stroke="#e4eae7" /><SvgText x={40} y={y + 3} textAnchor="end" fontSize={8} fill="#627473">{label}</SvgText></>; }
 
-function Simulator({ value, onEvent, event, busy }: { value: unknown; onEvent: (e: Event) => void; event: Event; busy: boolean }) {
+function Simulator({ value, onEvent, closing, busy }: { value: unknown; onEvent: (e: Event) => void; closing?: TransactionalAction; busy: boolean }) {
   const data = z.object({ plan_id: z.string(), amount: number, monthly_contribution: number, months: number }).parse(value);
   const [amount, setAmount] = useState(String(data.amount)), [monthly, setMonthly] = useState(String(data.monthly_contribution)), [months, setMonths] = useState(String(data.months));
   const n = (v: string) => Number(v.replace(/,/g, ''));
@@ -52,6 +52,39 @@ function Simulator({ value, onEvent, event, busy }: { value: unknown; onEvent: (
   return <Panel><Text style={ui.title}>Hazlo a tu medida</Text>{([{ label: 'Capital inicial', value: amount, set: setAmount }, { label: 'Aportación mensual', value: monthly, set: setMonthly }, { label: 'Plazo en meses', value: months, set: setMonths }]).map(field => <View key={field.label} style={{ gap: 6 }}><Text style={ui.caption}>{field.label}</Text><TextInput accessibilityLabel={field.label} keyboardType="numeric" value={field.value} onChangeText={field.set} style={ui.input} editable={!busy} /></View>)}
     {!valid && <Text style={ui.error}>Capital: $100–$1,000,000. Aportación: $0–$100,000. Plazo: 1–120 meses.</Text>}
     <ActionButton title="Actualizar simulación" disabled={busy || !valid} onPress={() => onEvent(eventSchema.parse({ name: 'simulate_investment', context: { plan_id: data.plan_id, amount: n(amount), monthly_contribution: n(monthly), months: n(months) } }))} />
+    {closing?.event.name === 'confirm_investment' && <ActionButton title={`Confirmar inversión de ${money(n(amount) || 0)}`} disabled={busy || !investmentInputSchema.safeParse({ plan_id: data.plan_id, amount: n(amount) }).success} onPress={() => onEvent(eventSchema.parse({ name: 'confirm_investment', context: { plan_id: data.plan_id, amount: n(amount) } }))} />}
+  </Panel>;
+}
+
+function PlanCard({ node, value, busy, onEvent }: { node: Extract<Node, { component: 'PlanCard' }>; value: unknown; busy: boolean; onEvent: (event: Event) => void }) {
+  const theme = useTheme();
+  const plan = z.object({ id: z.string(), name: z.string(), risk: z.string(), annual_rate: number, description: z.string() }).parse(value);
+  const closing = node.transactionalAction;
+  if (plan.id !== closing.event.context.plan_id) throw new Error('Acción incompatible con el plan.');
+  const [amount, setAmount] = useState(String(node.amount ?? closing.event.context.amount));
+  const parsed = Number(amount.replace(/,/g, ''));
+  const valid = amount.trim() !== '' && investmentInputSchema.safeParse({ plan_id: plan.id, amount: parsed }).success;
+  const withAmount = (event: Event) => eventSchema.parse({ ...event, context: { ...event.context, amount: parsed } });
+  return <Panel><Text style={ui.eyebrow}>RIESGO {plan.risk.toUpperCase()}</Text><Text style={ui.title}>{plan.name}</Text><Text style={[ui.value, { color: theme.accent }]}>{Math.round(plan.annual_rate * 100)}%</Text><Text style={ui.caption}>Tasa anual hipotética</Text><Text style={ui.body}>{plan.description}</Text>
+    <Text style={ui.caption}>Monto a invertir</Text><TextInput accessibilityLabel={`Monto a invertir en ${plan.name}`} keyboardType="decimal-pad" value={amount} onChangeText={setAmount} style={ui.input} editable={!busy} />
+    {!valid && <Text style={ui.error}>Ingresa de $100 a $1,000,000, con máximo dos decimales.</Text>}
+    {node.action && <ActionButton title={`Explorar ${plan.name}`} secondary disabled={busy || !valid} onPress={() => node.action && onEvent(withAmount(node.action.event))} />}
+    <ActionButton title={closing.kind === 'mutation' ? `Invertir ${money(valid ? parsed : 0)} en ${plan.name}` : closing.label} disabled={busy || !valid} onPress={() => onEvent(withAmount(closing.event))} />
+  </Panel>;
+}
+
+function DebtCard({ node, value, busy, onEvent }: { node: Extract<Node, { component: 'DebtCard' }>; value: unknown; busy: boolean; onEvent: (event: Event) => void }) {
+  const debt = z.object({ name: z.string(), balance: number, annual_rate: number, minimum_payment: number, due_day: number, credit_limit: number.positive() }).parse(value);
+  const closing = node.transactionalAction;
+  const [amount, setAmount] = useState(String(closing.event.context.extra_payment));
+  const parsed = Number(amount.replace(/,/g, ''));
+  const valid = amount.trim() !== '' && parsed <= debt.balance && paymentInputSchema.safeParse({ ...closing.event.context, extra_payment: parsed }).success;
+  const withAmount = (event: Event) => eventSchema.parse({ ...event, context: { ...event.context, extra_payment: parsed } });
+  return <Panel><Text style={ui.title}>{debt.name}</Text><Text style={ui.value}>{money(debt.balance)}</Text><Progress value={debt.balance / debt.credit_limit * 100} /><Text style={ui.body}>Tasa anual: {Math.round(debt.annual_rate * 100)}%{'\n'}Pago mínimo: {money(debt.minimum_payment)}{'\n'}Día de pago: {debt.due_day}</Text>
+    <TextInput accessibilityLabel={`Monto a abonar a ${debt.name}`} keyboardType="decimal-pad" value={amount} onChangeText={setAmount} style={ui.input} editable={!busy} />
+    {!valid && <Text style={ui.error}>Ingresa un abono positivo, con máximo dos decimales, que no supere la deuda ni $100,000.</Text>}
+    {node.action && <ActionButton title="Simular abono" secondary disabled={busy || !valid} onPress={() => node.action && onEvent(withAmount(node.action.event))} />}
+    <ActionButton title={`Confirmar abono de ${money(valid ? parsed : 0)}`} disabled={busy || !valid} onPress={() => onEvent(withAmount(closing.event))} />
   </Panel>;
 }
 
@@ -63,11 +96,21 @@ function Surface({ messages, onAction, busy }: { messages: unknown[]; onAction: 
     for (const part of ('data' in node ? node.data : undefined)?.path.slice(1).split('/').map(p => p.replace(/~1/g, '/').replace(/~0/g, '~')) ?? []) { if (['__proto__', 'constructor', 'prototype'].includes(part)) throw new Error('Ruta inválida'); value = (value as Record<string, unknown>)?.[part]; }
     return value;
   }
-  function send(node: Node, event: Event) { onAction(uiActionSchema.parse({ version: 'v0.9', action: { ...event, surfaceId, sourceComponentId: node.id, timestamp: new Date().toISOString() } })); }
+  function send(node: Node, event: Event) {
+    if (busy) return;
+    const action = uiActionSchema.parse({ version: 'v0.9', action: { ...event, surfaceId, sourceComponentId: node.id, timestamp: new Date().toISOString() } });
+    if (event.name === 'confirm_investment' || event.name === 'confirm_debt_payment') {
+      const amount = event.name === 'confirm_investment' ? event.context.amount : event.context.extra_payment;
+      Alert.alert('Confirmar operación', `Se descontarán ${money(amount)} de tu saldo disponible de demostración.`, [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Confirmar', onPress: () => onAction(action) },
+      ]);
+    } else onAction(action);
+  }
   function render(id: string): ReactNode {
     const node = nodes.get(id)!;
     const content = renderContent(id);
-    if (!('transactionalAction' in node) || !node.transactionalAction || node.component === 'PlanCard') return content;
+    if (!('transactionalAction' in node) || !node.transactionalAction || ['PlanCard', 'DebtCard', 'Simulator'].includes(node.component)) return content;
     const closing = node.transactionalAction;
     return <View key={id} style={ui.stack}>{content}<ActionButton title={closing.label} disabled={busy} onPress={() => send(node, closing.event)} /></View>;
   }
@@ -81,9 +124,9 @@ function Surface({ messages, onAction, busy }: { messages: unknown[]; onAction: 
       case 'Metric': return <Panel key={id}><Text style={ui.caption}>{node.label}</Text><Text style={[ui.value, { color: node.tone === 'positive' ? '#15803d' : theme.accent }]}>{format(node.value, node.format)}</Text>{!!node.detail && <Text style={ui.caption}>{node.detail}</Text>}</Panel>;
       case 'FinancialChart': return <Chart key={id} node={node} value={bound(node)} />;
       case 'Button': return <ActionButton key={id} title={node.text!} disabled={busy} onPress={() => node.action && send(node, node.action.event)} />;
-      case 'Simulator': return <Simulator key={id} value={bound(node)} busy={busy} event={node.action!.event} onEvent={e => send(node, e)} />;
-      case 'PlanCard': { const p = z.object({ name: z.string(), risk: z.string(), annual_rate: number, description: z.string() }).parse(bound(node)); return <Panel key={id}><Text style={ui.eyebrow}>RIESGO {p.risk.toUpperCase()}</Text><Text style={ui.title}>{p.name}</Text><Text style={[ui.value, { color: theme.accent }]}>{Math.round(p.annual_rate * 100)}%</Text><Text style={ui.caption}>Tasa anual hipotética</Text><Text style={ui.body}>{p.description}</Text><Text style={ui.body}>Capital inicial: {money(node.amount ?? 0)}</Text><ActionButton title={`Explorar ${p.name}`} disabled={busy} onPress={() => send(node, node.transactionalAction.event)} /></Panel>; }
-      case 'DebtCard': { const d = z.object({ name: z.string(), balance: number, annual_rate: number, minimum_payment: number, due_day: number, credit_limit: number.positive() }).parse(bound(node)); return <Panel key={id}><Text style={ui.title}>{d.name}</Text><Text style={ui.value}>{money(d.balance)}</Text><Progress value={d.balance / d.credit_limit * 100} /><Text style={ui.body}>Tasa anual: {Math.round(d.annual_rate * 100)}%{"\n"}Pago mínimo: {money(d.minimum_payment)}{"\n"}Día de pago: {d.due_day}</Text><ActionButton title="Simular abono de $500" disabled={busy} onPress={() => node.action && send(node, node.action.event)} /></Panel>; }
+      case 'Simulator': return <Simulator key={id} value={bound(node)} busy={busy} closing={node.transactionalAction} onEvent={e => send(node, e)} />;
+      case 'PlanCard': return <PlanCard key={id} node={node} value={bound(node)} busy={busy} onEvent={event => send(node, event)} />;
+      case 'DebtCard': return <DebtCard key={id} node={node} value={bound(node)} busy={busy} onEvent={event => send(node, event)} />;
       case 'DataTable': { const rows = z.array(z.record(z.string(), z.unknown())).max(100).parse(bound(node)); return <Panel key={id}><Text style={ui.title}>{node.title}</Text><Text style={ui.caption}>{rows.length} registros</Text>{!rows.length && <Text style={ui.body}>No hay movimientos con estos filtros.</Text>}<ScrollView horizontal><View>{rows.map((row, i) => <View key={i} style={{ flexDirection: 'row', borderBottomWidth: 1, borderColor: '#edf2f0', paddingVertical: 10 }}>{node.columns?.map(c => <View key={c.key} style={{ width: c.key === 'merchant' ? 170 : 115, paddingRight: 8 }}><Text style={ui.caption}>{c.label}</Text><Text style={ui.body}>{c.key === 'kind' ? row[c.key] === 'income' ? 'Ingreso' : 'Gasto' : format(row[c.key], c.format)}</Text></View>)}</View>)}</View></ScrollView></Panel>; }
       case 'BudgetList': { const rows = z.array(z.object({ category: z.string(), spent: number, budget: number, percent: number, remaining: number })).max(100).parse(bound(node)); return <Panel key={id}><Text style={ui.title}>{node.title}</Text>{rows.map(r => <View key={r.category} style={{ gap: 8 }}><Text style={ui.body}>{r.category}</Text><Text style={ui.caption}>{money(r.spent)} / {money(r.budget)}</Text><Progress value={r.percent} /><Text style={r.remaining < 0 ? ui.error : ui.caption}>{money(Math.abs(r.remaining))} {r.remaining < 0 ? 'por encima del presupuesto' : 'disponibles'}</Text></View>)}</Panel>; }
       case 'GoalList': { const rows = z.array(z.object({ name: z.string(), saved: number, target: number.positive() })).max(100).parse(bound(node)); return <Panel key={id}><Text style={ui.title}>{node.title}</Text>{rows.map(r => <View key={r.name} style={{ gap: 8 }}><Text style={ui.body}>{r.name}</Text><Progress value={r.saved / r.target * 100} /><Text style={ui.caption}>{money(r.saved)} de {money(r.target)}</Text></View>)}</Panel>; }

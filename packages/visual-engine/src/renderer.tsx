@@ -15,17 +15,19 @@ class SurfaceBoundary extends Component<{ children: ReactNode; onRecover: () => 
   render() { return this.state.failed ? <div className="finance-panel" role="alert"><h3>No se pudo mostrar esta vista</h3><p>Tu sesión sigue activa. Puedes volver al resumen e intentar otra consulta.</p><button onClick={this.props.onRecover}>Volver al resumen</button></div> : this.props.children; }
 }
 
-function Simulator({ data, event, onEvent, busy }: { data: unknown; event: Event; onEvent: (event: Event) => void; busy: boolean }) {
+function Simulator({ data, closing, onEvent, busy }: { data: unknown; closing?: TransactionalAction; onEvent: (event: Event) => void; busy: boolean }) {
   const initial = z.object({ plan_id: z.string(), amount: numeric, months: numeric, monthly_contribution: numeric }).parse(data);
   const [amount, setAmount] = useState(String(initial.amount));
   const [monthly, setMonthly] = useState(String(initial.monthly_contribution));
   const [months, setMonths] = useState(String(initial.months));
   return <form className="finance-panel simulation-form" onSubmit={e => { e.preventDefault(); onEvent(eventSchema.parse({ name: 'simulate_investment', context: { plan_id: initial.plan_id, amount: Number(amount), monthly_contribution: Number(monthly), months: Number(months) } })); }}>
     <div><h3>Hazlo a tu medida</h3><p>Ajusta los montos para generar otra proyección.</p></div>
-    <label>Capital inicial<input type="number" min="100" max="1000000" step="100" required value={amount} onChange={e => setAmount(e.target.value)} /></label>
-    <label>Aportación mensual<input type="number" min="0" max="100000" step="100" required value={monthly} onChange={e => setMonthly(e.target.value)} /></label>
+    <label>Capital inicial<input type="number" min="100" max="1000000" step="0.01" required value={amount} onChange={e => setAmount(e.target.value)} /></label>
+    <label>Aportación mensual<input type="number" min="0" max="100000" step="0.01" required value={monthly} onChange={e => setMonthly(e.target.value)} /></label>
     <label>Plazo en meses<input type="number" min="1" max="120" step="1" required value={months} onChange={e => setMonths(e.target.value)} /></label>
     <button disabled={busy}>Actualizar simulación</button>
+    {closing?.event.name === 'confirm_investment' && <button type="button" disabled={busy || !investmentInputSchema.safeParse({ plan_id: initial.plan_id, amount: Number(amount) }).success}
+      onClick={() => onEvent(eventSchema.parse({ name: 'confirm_investment', context: { plan_id: initial.plan_id, amount: Number(amount) } }))}>Confirmar inversión de {new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(Number(amount) || 0)}</button>}
   </form>;
 }
 
@@ -93,7 +95,7 @@ function SurfaceView({ messages, onAction, busy }: { messages: unknown[]; onActi
   function render(id: string): ReactNode {
     const node = nodes.get(id)!;
     const content = renderContent(id);
-    if (node.component === 'DebtCard' || node.component === 'PlanCard') return content;
+    if (node.component === 'DebtCard' || node.component === 'PlanCard' || node.component === 'Simulator') return content;
     if (!('transactionalAction' in node) || !node.transactionalAction) return content;
     const closing = node.transactionalAction;
 
@@ -112,7 +114,7 @@ function SurfaceView({ messages, onAction, busy }: { messages: unknown[]; onActi
       case 'DataTable': { const rows = z.array(z.record(z.string(), z.unknown())).max(100).parse(bound(node)); return <section key={id} className="finance-panel"><div className="panel-heading"><h3>{node.title}</h3><span className="panel-unit">{rows.length} registros</span></div><div className="table-scroll"><table><thead><tr>{node.columns?.map(col => <th key={col.key}>{col.label}</th>)}</tr></thead><tbody>{rows.map((row, i) => <tr key={i}>{node.columns?.map(col => <td key={col.key} className={col.key === 'kind' ? 'type-cell' : ''}>{col.key === 'kind' ? row[col.key] === 'income' ? 'Ingreso' : 'Gasto' : format(row[col.key], col.format)}</td>)}</tr>)}</tbody></table>{!rows.length && <p className="empty-state">No hay movimientos con estos filtros.</p>}</div></section>; }
       case 'PlanCard': return <PlanCardComponent key={id} node={node} data={bound(node)} busy={busy} send={send} />;
       case 'DebtCard': return <DebtCardComponent key={id} node={node} data={bound(node)} busy={busy} send={send} />;
-      case 'Simulator': return <Simulator key={id} data={bound(node)} event={node.action.event} busy={busy} onEvent={event => send(node, event)} />;
+      case 'Simulator': return <Simulator key={id} data={bound(node)} closing={node.transactionalAction} busy={busy} onEvent={event => send(node, event)} />;
       case 'BudgetList': { const rows = z.array(z.object({ category: z.string(), budget: numeric, spent: numeric, percent: numeric, remaining: numeric })).parse(bound(node)); return <section key={id} className="finance-panel"><h3>{node.title}</h3><div className="progress-list">{rows.map(row => <div key={row.category} className={row.percent > 100 ? 'over-budget' : ''}><div className="progress-label"><strong>{row.category}</strong><span>{money(row.spent)} <small>/ {money(row.budget)}</small></span></div><progress max="100" value={Math.min(row.percent, 100)} /><small>{row.percent > 100 ? `${money(-row.remaining)} por encima del presupuesto` : `${money(row.remaining)} disponibles`}</small></div>)}</div></section>; }
       case 'GoalList': { const rows = z.array(z.object({ name: z.string(), saved: numeric, target: numeric })).parse(bound(node)); return <section key={id} className="finance-panel"><h3>{node.title}</h3><div className="progress-list">{rows.map(row => <div key={row.name}><div className="progress-label"><strong>{row.name}</strong><span>{Math.round(row.saved/row.target*100)}%</span></div><progress max={row.target} value={row.saved} /><small>{money(row.saved)} de {money(row.target)}</small></div>)}</div></section>; }
     }
