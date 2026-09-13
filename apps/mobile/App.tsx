@@ -1,68 +1,60 @@
-import { useEffect, useState } from 'react';
-import { Button, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import type { AccountSummary, ChatResponse, FinancialAction } from '@banortehack/contracts';
+﻿import { useCallback, useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, StatusBar, Text, TextInput, View } from 'react-native';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import type { AccountSummary, ChatResponse, UIAction } from '@lazy-bank/contracts';
 import { MobileSessionProvider, useSession } from './session';
 import { SpeechPlayer } from './SpeechPlayer';
+import { A2UIRenderer } from './A2UIRenderer';
+import { ActionButton, Panel, ThemeContext, themes, ui } from './ui';
 
 export default function App() {
-  return <MobileSessionProvider><Dashboard /></MobileSessionProvider>;
+  return <SafeAreaProvider><StatusBar barStyle="dark-content" /><MobileSessionProvider><Workspace /></MobileSessionProvider></SafeAreaProvider>;
 }
-
-function Dashboard() {
-  const { request, logout, voiceEnabled, demo } = useSession();
+function Workspace() {
+  const { request, logout, voiceEnabled } = useSession();
   const [account, setAccount] = useState<AccountSummary>();
-  const [message, setMessage] = useState('');
-  const [reply, setReply] = useState<ChatResponse>();
-  const [notice, setNotice] = useState('');
+  const [view, setView] = useState<ChatResponse>();
+  const [prompt, setPrompt] = useState('');
   const [busy, setBusy] = useState(false);
-
-  useEffect(() => {
-    request('/api/account').then(async response => {
-      if (!response.ok) throw new Error();
-      setAccount(await response.json());
-    }).catch(() => setNotice('No se pudo conectar a la API.'));
+  const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
+  const history = useRef<{ role: 'user' | 'assistant'; content: string }[]>([]);
+  const inFlight = useRef(false);
+  const scroll = useRef<ScrollView>(null);
+  const theme = themes[view?.domain as keyof typeof themes] ?? themes.default;
+  const load = useCallback(async () => {
+    try { setAccount(await (await request('/api/account')).json()); setError(''); }
+    catch (e) { setError(e instanceof Error ? e.message : 'No se pudo cargar el saldo.'); }
   }, [request]);
-
-  async function send() {
-    if (!message.trim() || busy) return;
-    setBusy(true);
-    setNotice('');
+  useEffect(() => { void load(); }, [load]);
+  async function query(text: string, action?: UIAction) {
+    if (inFlight.current || !text.trim()) return;
+    inFlight.current = true; setBusy(true); setError(''); setNotice('');
     try {
-      const response = await request('/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message }) });
-      if (!response.ok) throw new Error();
-      setReply(await response.json());
-      setMessage('');
-    } catch { setNotice('No se pudo responder. Revisa la API y el servicio de IA.'); }
-    finally { setBusy(false); }
+      const res = await request(action ? '/api/actions' : '/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(action ?? { message: text.trim(), history: history.current.slice(-6), simulation: view?.simulation, current_view: view }) });
+      const next: ChatResponse = await res.json();
+      if (!Array.isArray(next.a2ui)) throw new Error('No se pudo generar la vista. Intenta otra consulta.');
+      history.current = [...history.current, { role: 'user', content: text.slice(0, 2000) }, { role: 'assistant', content: next.message.slice(0, 2000) }].slice(-6) as typeof history.current;
+      if (next.transaction?.confirmed) setAccount(previous => previous ? { ...previous, balance: next.transaction!.balance_after } : previous);
+      setView(next);
+      setPrompt('');
+      scroll.current?.scrollTo({ y: 0, animated: true });
+    } catch (e) { setError(e instanceof Error ? e.message : 'No se pudo completar la consulta.'); }
+    finally { inFlight.current = false; setBusy(false); }
   }
-
-  async function preview(action: FinancialAction) {
-    try {
-      const response = await request('/api/transactions/preview', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action, amount: 100 }) });
-      if (!response.ok) throw new Error();
-      setNotice((await response.json()).message);
-    } catch { setNotice('No se pudo generar la vista previa.'); }
-  }
-
-  return <ScrollView contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled">
-    <Text style={styles.brand}>BANORTEHACK</Text><Text>Prototipo · Datos ficticios</Text>
-    {!demo && <Button title="Cerrar sesión" onPress={logout} />}
-    <View style={styles.card}><Text>Saldo disponible (MXN)</Text><Text style={styles.balance}>{account ? `$${account.balance.toFixed(2)}` : '—'}</Text></View>
-    {reply && <View style={styles.card}><Text>{reply.message}</Text><Text style={styles.title}>{reply.visualization.title}</Text>{reply.visualization.labels.map((label, index) => <Text key={label}>{label}: ${reply.visualization.values[index]} MXN</Text>)}</View>}
-    {reply && voiceEnabled && <SpeechPlayer key={reply.message + reply.domain} text={reply.message} />}
-    <Text style={styles.title}>¿Qué quieres explorar?</Text>
-    <TextInput accessibilityLabel="Mensaje" style={styles.input} value={message} onChangeText={setMessage} placeholder="Muéstrame mis ingresos" maxLength={2000} />
-    <Button title={busy ? 'Consultando…' : 'Enviar'} color="#d40028" onPress={send} disabled={busy || !message.trim()} />
-    <View style={styles.actions}>{(['invertir', 'pagar', 'transferir'] as const).map(action => <Button key={action} title={action} color="#b90024" onPress={() => preview(action)} />)}</View>
-    <Text accessibilityLiveRegion="polite">{notice}</Text>
-  </ScrollView>;
+  return <ThemeContext.Provider value={theme}><SafeAreaView style={ui.page}><KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+    <View style={[ui.row, { paddingHorizontal: 20, paddingVertical: 12 }]}><Text style={ui.brand}>LAZY BANK</Text><ActionButton title="Cerrar sesión" secondary onPress={logout} disabled={busy} /></View>
+    <ScrollView ref={scroll} keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: 20, gap: 18, flexGrow: 1, justifyContent: view ? 'flex-start' : 'center' }}>
+      {!view && <View style={{ gap: 12, alignItems: 'center', paddingVertical: 28 }}><Text style={ui.body}>Saldo disponible</Text><Text style={[ui.hero, { fontSize: 38 }]}>{account ? new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(account.balance) : '—'}</Text><Text style={ui.caption}>Perfil sintético de Alex · MXN</Text></View>}
+      {!!notice && <Panel><Text accessibilityLiveRegion="polite" style={ui.body}>{notice}</Text></Panel>}
+      {!!error && <Panel><Text accessibilityRole="alert" style={ui.error}>{error}</Text>{!account && <ActionButton title="Reintentar conexión" secondary onPress={() => void load()} />}</Panel>}
+      {busy && <View style={ui.row}><ActivityIndicator color={theme.accent} /><Text style={ui.body}>Preparando tu vista…</Text></View>}
+      {view && <><View style={ui.row}><Text style={[ui.eyebrow, { color: theme.accent }]}>{view.domain.toUpperCase()}</Text><ActionButton title="Volver al inicio" secondary disabled={busy} onPress={() => setView(undefined)} /></View><Text accessibilityLiveRegion="polite" style={ui.body}>{view.message}</Text>{voiceEnabled && <SpeechPlayer key={view.message} text={view.message} />}<A2UIRenderer messages={view.a2ui} onAction={action => { if (action.action.name === 'return_to_zero') { if (!inFlight.current) { setView(undefined); setPrompt(''); setNotice(''); } } else void query('Explorar escenario', action); }} busy={busy} onRecover={() => setView(undefined)} /></>}
+    </ScrollView>
+    <View style={{ padding: 16, gap: 10, backgroundColor: '#fff', borderTopWidth: 1, borderColor: '#e5ebe8' }}>
+      <View style={ui.row}><TextInput accessibilityLabel="Pregunta sobre tus finanzas" style={[ui.input, { flex: 1, maxHeight: 120 }]} value={prompt} onChangeText={setPrompt} multiline maxLength={2000} placeholder="¿Qué quieres hacer con tu dinero?" editable={!busy} /><ActionButton title="Enviar" onPress={() => void query(prompt)} disabled={busy || !prompt.trim()} /></View>
+      {!view && <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>{['Revisar deudas', 'Analizar gastos', 'Explorar inversiones'].map(text => <ActionButton key={text} title={text} secondary disabled={busy} onPress={() => void query(text)} />)}</View>}
+      <Text style={ui.caption}>Datos sintéticos. Las proyecciones no mueven dinero real.</Text>
+    </View>
+  </KeyboardAvoidingView></SafeAreaView></ThemeContext.Provider>;
 }
-
-const styles = StyleSheet.create({
-  page: { padding: 24, paddingTop: 64, gap: 16, backgroundColor: '#f6f7f8', flexGrow: 1 },
-  brand: { color: '#d40028', fontSize: 24, fontWeight: '700' },
-  card: { padding: 24, backgroundColor: 'white', borderRadius: 16, gap: 8 },
-  balance: { fontSize: 36, fontWeight: '700' }, title: { fontWeight: '600', marginTop: 12 },
-  input: { padding: 16, borderWidth: 1, borderColor: '#aaa', borderRadius: 8, backgroundColor: 'white' },
-  actions: { gap: 8 }
-});

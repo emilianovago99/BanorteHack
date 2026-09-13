@@ -6,7 +6,7 @@
   "start_date": "2024-01-01",
   "end_date": "2026-08-31",
   "default_month": "2026-08",
-  "transaction_count": 11602,
+  "transaction_count": 11606,
   "opening_balance_cents": 4200000,
   "accounts": [
     {
@@ -57,6 +57,15 @@
       "minimum_payment": 1400,
       "due_day": 18,
       "credit_limit": 16800
+    },
+    {
+      "id": "auto-loan",
+      "name": "Crédito Automotriz",
+      "balance": 50000.0,
+      "annual_rate": 0.145,
+      "minimum_payment": 3500,
+      "due_day": 12,
+      "credit_limit": 180000
     }
   ],
   "investments": [
@@ -69,6 +78,16 @@
       "name": "Portafolio diversificado demo",
       "value": 46000,
       "principal": 42000
+    },
+    {
+      "id": "balanced",
+      "name": "Plan Equilibrado",
+      "value": 20000.010000000002
+    },
+    {
+      "id": "conservative",
+      "name": "Plan Conservador",
+      "value": 10000.0
     }
   ],
   "goals": [

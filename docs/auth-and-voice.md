@@ -11,22 +11,22 @@ En **Applications → Applications → Create Application**, crear:
 | Configuración | Web | Móvil |
 | --- | --- | --- |
 | Tipo de aplicación | Single Page Application | Native |
-| Nombre sugerido | BanorteHack Web | BanorteHack Mobile |
-| Allowed Callback URLs | `http://localhost:5173` | `banortehack://auth/callback` |
-| Allowed Logout URLs | `http://localhost:5173` | `banortehack://auth/callback` |
+| Nombre sugerido | Lazy Bank Web | Lazy Bank Mobile |
+| Allowed Callback URLs | `http://localhost:5173` | `lazy-bank://auth/callback` |
+| Allowed Logout URLs | `http://localhost:5173` | `lazy-bank://auth/callback` |
 | Allowed Web Origins | `http://localhost:5173` | No requerido para la app nativa |
 | Variable para el Client ID de Settings | `OAUTH_WEB_CLIENT_ID` | `OAUTH_MOBILE_CLIENT_ID` |
 
 Guardar los cambios. Ambas aplicaciones son clientes públicos: usar Authorization Code con PKCE y autenticación del token endpoint **None**; nunca agregar Client Secret al cliente. Si la API restringe qué aplicaciones pueden solicitar tokens, autorizar ambas aplicaciones para esa API. El login web solicita `openid profile email` y la audiencia configurada.
 
-Si Auth0 devuelve `Client is not authorized to access resource server`, abrir **Applications → APIs → tu API → Application Access**. En **BanorteHack Web → Edit**, seleccionar **Grant Access** para **User-Delegated Access** y guardar; repetir para **BanorteHack Mobile**. Si el acceso está deshabilitado para todas las apps, en **Settings → Application Access Policy** establecer **User-Delegated Access → Per-app authorization** y después otorgar esos accesos individuales. Este login no requiere habilitar Client Credentials ni acceso Machine-to-Machine. Volver a `http://localhost:5173` sin los parámetros del error y reintentar el login.
+Si Auth0 devuelve `Client is not authorized to access resource server`, abrir **Applications → APIs → tu API → Application Access**. En **Lazy Bank Web → Edit**, seleccionar **Grant Access** para **User-Delegated Access** y guardar; repetir para **Lazy Bank Mobile**. Si el acceso está deshabilitado para todas las apps, en **Settings → Application Access Policy** establecer **User-Delegated Access → Per-app authorization** y después otorgar esos accesos individuales. Este login no requiere habilitar Client Credentials ni acceso Machine-to-Machine. Volver a `http://localhost:5173` sin los parámetros del error y reintentar el login.
 
 En `services/api/.env`:
 
 ```dotenv
 AUTH_MODE=required
 OAUTH_ISSUER=https://TU-TENANT.us.auth0.com/
-OAUTH_AUDIENCE=https://banortehack-api
+OAUTH_AUDIENCE=https://lazy-bank-api
 OAUTH_WEB_CLIENT_ID=CLIENT_ID_WEB
 OAUTH_MOBILE_CLIENT_ID=CLIENT_ID_NATIVE
 ELEVENLABS_API_KEY=CLAVE_PRIVADA
@@ -36,7 +36,7 @@ ELEVENLABS_MODEL_ID=eleven_multilingual_v2
 
 Usar el `issuer` que publica `https://TU-TENANT.us.auth0.com/.well-known/openid-configuration`. También se acepta el dominio de Auth0 sin `https://`: la API lo normaliza a una URL con barra final. Reiniciar la API tras cambiar `.env` y recargar los clientes. `GET /api/config` expone exclusivamente configuración pública y disponibilidad de voz; nunca claves de ElevenLabs.
 
-Para usar la app nativa, reconstruir un **development build** con el esquema `banortehack` (`npm run android --workspace @banortehack/mobile` o el equivalente iOS en macOS). Expo Go no sirve para probar este callback propio. Mantener `EXPO_PUBLIC_API_URL` apuntando a la API accesible por el teléfono.
+Para usar la app nativa, reconstruir un **development build** con el esquema `lazy-bank` (`npm run android --workspace @lazy-bank/mobile` o el equivalente iOS en macOS). Expo Go no sirve para probar este callback propio. Mantener `EXPO_PUBLIC_API_URL` apuntando a la API accesible por el teléfono.
 
 ## Voz
 
@@ -51,7 +51,7 @@ La clave necesita permiso **Text to Speech** y acceso a la voz elegida. Después
 Comprobar discovery de Auth0 y acceso a la voz, sin sintetizar audio ni consumir créditos de TTS:
 
 ```powershell
-npm run check:integrations --workspace @banortehack/api
+npm run check:integrations --workspace @lazy-bank/api
 ```
 
 Esta consulta de voz requiere también permiso **Voices Read**. Un 401/403 en esta comprobación puede indicar permisos insuficientes; no prueba por sí solo que Text to Speech esté deshabilitado. No valida el login interactivo ni la configuración de callbacks.

@@ -2,7 +2,7 @@
 
 Cada consulta de la web produce una nueva superficie a partir de resultados de herramientas MCP. Gemini interpreta intención y parámetros; el orquestador decide qué herramientas invocar y compone los mensajes de interfaz. Los importes y las series siempre se calculan desde el dataset o mediante fórmulas de simulación. El modelo no escribe HTML, JavaScript, SQL ni importes para mostrar.
 
-Se implementa un subconjunto de los [mensajes A2UI v0.9](https://a2ui.org/specification/v0_9/server_to_client.json), con catálogo propio `banortehack:finance-v1`. El esquema de componentes está en [`catalog.json`](../packages/visual-engine/catalog.json). No es el catálogo estándar ni una implementación completa de A2UI/A2A.
+Se implementa un subconjunto de los [mensajes A2UI v0.9](https://a2ui.org/specification/v0_9/server_to_client.json), con catálogo propio `lazy-bank:finance-v1`. El esquema de componentes está en [`catalog.json`](../packages/visual-engine/catalog.json). No es el catálogo estándar ni una implementación completa de A2UI/A2A.
 
 ## Flujo
 
@@ -42,4 +42,6 @@ La simulación activa viaja en el siguiente mensaje del chat, de modo que “¿y
 
 El renderer valida mensajes con Zod, limita componentes, comprueba referencias y ciclos, rechaza componentes desconocidos y muestra recuperación ante errores de renderizado. Las claves de Gemini, Auth0 y ElevenLabs permanecen en el servidor.
 
-El renderer completo de este catálogo está en la web. La aplicación nativa conserva su cliente de chat y representación resumida de `visualization`; no implementa todavía el catálogo interactivo completo. La web se adapta también a pantallas de teléfono.
+Web y Android renderizan el catálogo financiero completo. El validador de protocolo se comparte; React Native usa vistas nativas y SVG, mientras la web usa React y Chart.js. Los dos clientes envían las mismas acciones al gateway, conservan el contexto de la simulación y cambian la paleta según el dominio. Ver [ejecución en Android](mobile.md).
+
+Las preguntas ilegibles, fuera de alcance, sin datos o con problemas del proveedor invocan `report_query_issue` en MCP. Su resultado genera una vista de aclaración. `AI_MODE=gemini` exige interpretación real del modelo; el error de cuota se comunica explícitamente. Las modificaciones de presentación también pasan por Gemini en ese modo.

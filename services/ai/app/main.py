@@ -5,8 +5,8 @@ from fastapi import FastAPI, Request, HTTPException
 from pydantic import ValidationError
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
-from app.mcp.client import FinancialTools
-from app.orchestrator import answer, render_plan, handle_action
+from app.mcp.client import FinancialTools, FinancialQueryError
+from app.orchestrator import answer, render_plan, handle_action, query_issue
 from app.schemas import ChatRequest, ChatResponse, QueryPlan, ActionRequest
 
 @asynccontextmanager
@@ -19,7 +19,7 @@ async def lifespan(app):
             yield
 
 
-app = FastAPI(title="BanorteHack Financial Intelligence", version="0.2.0", lifespan=lifespan)
+app = FastAPI(title="Lazy Bank Financial Intelligence", version="0.2.0", lifespan=lifespan)
 
 
 @app.get("/health")
@@ -29,7 +29,11 @@ def health():
 
 @app.post("/chat", response_model=ChatResponse)
 async def chat(body: ChatRequest, request: Request):
-    return await answer(body, FinancialTools(request.app.state.mcp))
+    tools = FinancialTools(request.app.state.mcp)
+    try:
+        return await answer(body, tools)
+    except FinancialQueryError:
+        return await query_issue(tools, "unavailable", "unavailable")
 
 
 @app.get("/account")

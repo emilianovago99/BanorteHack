@@ -1,17 +1,17 @@
-name: banortehack
+name: lazy-bank
 services:
   postgres:
     image: timescale/timescaledb:latest-pg16
     environment:
-      POSTGRES_USER: banortehack
+      POSTGRES_USER: lazy-bank
       POSTGRES_PASSWORD: local-development-only
-      POSTGRES_DB: banortehack
+      POSTGRES_DB: lazy-bank
     ports: ["127.0.0.1:5432:5432"]
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ../database/001_initial.sql:/docker-entrypoint-initdb.d/001_initial.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U banortehack -d banortehack"]
+      test: ["CMD-SHELL", "pg_isready -U lazy-bank -d lazy-bank"]
       interval: 5s
       timeout: 5s
       retries: 10

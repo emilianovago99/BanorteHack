@@ -13,6 +13,6 @@ export default defineConfig({
   webServer: [
     { command: `${python} -m uvicorn app.main:app --app-dir services/ai --port 8001`, cwd: root, env: { AI_MODE: 'local' }, url: 'http://127.0.0.1:8001/health', timeout: 90000 },
     { command: 'node services/api/src/index.js', cwd: root, env: { AUTH_MODE: 'demo', HOST: '127.0.0.1', PORT: '3002', AI_SERVICE_URL: 'http://127.0.0.1:8001' }, url: 'http://127.0.0.1:3002/health', timeout: 30000 },
-    { command: 'npm run dev --workspace @banortehack/web -- --host 127.0.0.1 --port 5180', cwd: root, env: { API_PROXY_TARGET: 'http://127.0.0.1:3002' }, url: 'http://127.0.0.1:5180', timeout: 30000 },
+    { command: 'npm run dev --workspace @lazy-bank/web -- --host 127.0.0.1 --port 5180', cwd: root, env: { API_PROXY_TARGET: 'http://127.0.0.1:3002' }, url: 'http://127.0.0.1:5180', timeout: 30000 },
   ],
 });

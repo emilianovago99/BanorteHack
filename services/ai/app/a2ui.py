@@ -1,7 +1,7 @@
 """Mensajes A2UI v0.9 con catálogo financiero propio y datos separados de la UI."""
 from uuid import uuid4
 
-CATALOG_ID = "banortehack:finance-v1"
+CATALOG_ID = "lazy-bank:finance-v1"
 
 
 class Surface:
@@ -43,11 +43,12 @@ class Surface:
         return self.node("Notice", text=text)
 
     def finish(self):
-        return [
+        from app.a2ui_validation import validate_surface
+        return validate_surface([
             {"version": "v0.9", "createSurface": {"surfaceId": self.id, "catalogId": CATALOG_ID}},
             {"version": "v0.9", "updateDataModel": {"surfaceId": self.id, "path": "/", "value": self.model}},
             {"version": "v0.9", "updateComponents": {"surfaceId": self.id, "components": [{"id": "root", "component": "Column", "children": self.body}, *self.components]}},
-        ]
+        ])
 
 
 def money(value):

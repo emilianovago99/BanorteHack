@@ -3,7 +3,7 @@ from mcp.server.fastmcp import FastMCP
 from app.data.repository import repository
 from app.data.simulations import investment_plans, simulate_investment, debt_payoff
 
-mcp = FastMCP("BanorteHack Financial Intelligence")
+mcp = FastMCP("Lazy Bank Financial Intelligence")
 
 
 @mcp.tool()
@@ -45,13 +45,25 @@ def get_budget_status(month: str | None = None) -> dict:
 @mcp.tool()
 def get_debts() -> dict:
     """Créditos: saldo, tasa anual, pago mínimo, límite y vencimiento."""
-    return {"rows": repository().profile["debts"], "total": sum(item["balance"] for item in repository().profile["debts"])}
+    return repository().get_debts()
 
 
 @mcp.tool()
 def simulate_debt_payoff(debt_id: str, extra_payment: float = 500) -> dict:
     """Compara pagos mínimos contra abonos adicionales. No efectúa pagos."""
     return debt_payoff(debt_id, extra_payment)
+
+
+@mcp.tool()
+def confirm_debt_payment(debt_id: str, extra_payment: float) -> dict:
+    """Confirma un abono único: registra el egreso y reduce la deuda en el dataset de demostración. Requiere confirmación explícita del usuario."""
+    return repository().apply_debt_payment(debt_id, extra_payment)
+
+
+@mcp.tool()
+def confirm_investment(plan_id: str, amount: float) -> dict:
+    """Confirma una inversión: registra el egreso y deduce el saldo."""
+    return repository().apply_investment(plan_id, amount)
 
 
 @mcp.tool()
@@ -80,6 +92,19 @@ def customize_financial_view(messages: list[dict], order: Literal["asc", "desc"]
     if color and color not in PALETTES and not re.fullmatch(r"#[0-9a-fA-F]{6}", color):
         raise ValueError("Color inválido")
     return customize_surface(messages, order, color, chart_type, sort_key, target)
+
+
+@mcp.tool()
+def report_query_issue(reason: Literal["not_understood", "out_of_scope", "no_data", "unavailable", "quota"]) -> dict:
+    """Devuelve una aclaración y ejemplos cuando no se entiende la consulta o no se puede obtener información. No inventa datos."""
+    messages = {
+        "not_understood": "No entendí lo que necesitas. Puedes preguntar por tus ingresos, gastos, deudas o inversiones.",
+        "out_of_scope": "No puedo procesar esa solicitud. Sin embargo, puedo ayudarte a consultar tus saldos, revisar tus deudas o simular inversiones.",
+        "no_data": "No encontré datos para esa consulta. El dataset cubre enero de 2024 a agosto de 2026; prueba otro periodo o comercio.",
+        "unavailable": "No pude conseguir la información en este momento. Intenta de nuevo en unos instantes.",
+        "quota": "Gemini alcanzó el límite de solicitudes de este proyecto. No pude interpretar tu consulta con IA. Intenta cuando se restablezca la cuota."
+    }
+    return {"reason": reason, "message": messages[reason], "suggestions": ["Revisar deudas", "Analizar gastos de agosto de 2026", "Explorar inversiones"]}
 
 
 if __name__ == "__main__":

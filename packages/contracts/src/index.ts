@@ -1,4 +1,7 @@
-export type FinancialDomain = 'resumen' | 'deudas' | 'ingresos' | 'gastos' | 'inversiones' | 'presupuestos' | 'movimientos' | 'suscripciones';
+import { z } from 'zod';
+import { uiActionSchema } from './a2ui';
+export * from './a2ui';
+export type FinancialDomain = 'resumen' | 'deudas' | 'ingresos' | 'gastos' | 'inversiones' | 'presupuestos' | 'movimientos' | 'suscripciones' | 'clarificacion';
 export type FinancialAction = 'invertir' | 'pagar' | 'transferir';
 
 // Resumen de gráfica para clientes que no renderizan el catálogo completo.
@@ -9,6 +12,13 @@ export interface Visualization {
   values: number[];
 }
 
+export interface TransactionResult {
+  transaction_id: string;
+  confirmed: boolean;
+  balance_after: number;
+  debt_after: Record<string, unknown> | null;
+}
+
 export interface ChatResponse {
   message: string;
   domain: FinancialDomain;
@@ -16,9 +26,10 @@ export interface ChatResponse {
   visualization: Visualization;
   a2ui: unknown[];
   surface_id: string;
+  transaction?: TransactionResult | null;
   workspace_operation?: 'create' | 'update';
   tools_used: string[];
-  interpretation: 'gemini' | 'local';
+  interpretation: 'gemini' | 'local' | 'unavailable';
   source: string;
   period?: string | null;
   simulation?: { plan_id: 'conservative' | 'balanced' | 'growth'; amount: number; months: number; monthly_contribution: number } | null;
@@ -35,10 +46,7 @@ export interface AccountSummary {
   dataset?: { start_date: string; end_date: string; transaction_count: number; profile: string };
 }
 
-export interface UIAction {
-  version: 'v0.9';
-  action: { name: string; surfaceId: string; sourceComponentId: string; timestamp: string; context: Record<string, unknown> };
-}
+export type UIAction = z.infer<typeof uiActionSchema>;
 
 export interface PublicConfig {
   auth: {

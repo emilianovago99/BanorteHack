@@ -1,6 +1,6 @@
 import { Auth0Provider, useAuth0 } from '@auth0/auth0-react';
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
-import type { PublicConfig } from '@banortehack/contracts';
+import type { PublicConfig } from '@lazy-bank/contracts';
 
 interface Session {
   request: (path: string, init?: RequestInit) => Promise<Response>;
@@ -27,7 +27,7 @@ async function checkResponse(response: Response) {
 const demoRequest: Session['request'] = async (path, init) => checkResponse(await fetch(path, init));
 
 function LoginScreen({ demo = false, onLogin, error }: { demo?: boolean; onLogin: () => void; error?: boolean }) {
-  return <div className="login-shell"><section className="login-story"><a className="brand" href="/"><span className="brand-mark">B</span><span>BANORTE<span className="brand-light">HACK</span></span></a><div><span className="eyebrow">TU ESPACIO FINANCIERO</span><h1>Tu dinero, con más claridad.</h1><p>Pregunta, descubre y construye una vista de tus finanzas a tu medida.</p><div className="login-preview"><span>Una conversación. Nuevas perspectivas.</span><strong>Todo empieza contigo.</strong><div className="login-bars" aria-hidden="true"><i /><i /><i /><i /><i /></div></div></div><small>Prototipo con datos sintéticos</small></section><main className="login-card"><span className="eyebrow">BIENVENIDO A NORTE</span><h2>Inicia sesión</h2><p>Un solo espacio para entender tus movimientos, explorar escenarios y tomar mejores decisiones.</p>{error && <p role="alert">No se pudo iniciar sesión. Intenta de nuevo.</p>}<button onClick={onLogin}>{demo ? 'Entrar a la demostración' : 'Iniciar sesión'}</button><small>{demo ? 'Explora el perfil ficticio de Alex, sin credenciales bancarias.' : 'Continúa con tu cuenta mediante el acceso seguro.'}</small></main></div>;
+  return <div className="login-shell"><section className="login-story"><a className="brand" href="/"><span className="brand-mark">L</span><span>LAZY <span className="brand-light">BANK</span></span></a><div><span className="eyebrow">TU ESPACIO FINANCIERO</span><h1>Tu dinero, con más claridad.</h1><p>Pregunta, descubre y construye una vista de tus finanzas a tu medida.</p></div></section><main className="login-card"><h2>Inicia sesión</h2>{error && <p role="alert">No se pudo iniciar sesión. Intenta de nuevo.</p>}<button onClick={onLogin}>{demo ? 'Entrar a la demostración' : 'Iniciar sesión'}</button></main></div>;
 }
 
 function AuthenticatedSession({ config, children }: { config: PublicConfig; children: ReactNode }) {

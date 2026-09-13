@@ -1,0 +1,201 @@
+{
+  "profile": {
+    "synthetic": true,
+    "seed": 20260912,
+    "profile": "Alex · perfil de demostración",
+    "currency": "MXN",
+    "start_date": "2024-01-01",
+    "end_date": "2026-08-31",
+    "default_month": "2026-08",
+    "transaction_count": 11606,
+    "opening_balance_cents": 4200000,
+    "accounts": [
+      {
+        "id": "checking",
+        "name": "Cuenta de uso diario",
+        "type": "Débito",
+        "last4": "4821"
+      }
+    ],
+    "budgets": {
+      "Alimentos": 3500,
+      "Supermercado": 2800,
+      "Transporte": 1800,
+      "Compras": 1800,
+      "Entretenimiento": 1200,
+      "Salud": 1600,
+      "Educación": 1200,
+      "Mascotas": 800,
+      "Suscripciones": 450,
+      "Vivienda": 9000,
+      "Servicios": 1900,
+      "Créditos": 3900
+    },
+    "debts": [
+      {
+        "id": "card-classic",
+        "name": "Tarjeta Clásica",
+        "balance": 24500,
+        "annual_rate": 0.36,
+        "minimum_payment": 1800,
+        "due_day": 25,
+        "credit_limit": 60000
+      },
+      {
+        "id": "personal-loan",
+        "name": "Crédito personal",
+        "balance": 48000,
+        "annual_rate": 0.22,
+        "minimum_payment": 2100,
+        "due_day": 5,
+        "credit_limit": 90000
+      },
+      {
+        "id": "laptop",
+        "name": "Laptop · meses sin intereses",
+        "balance": 8400,
+        "annual_rate": 0,
+        "minimum_payment": 1400,
+        "due_day": 18,
+        "credit_limit": 16800
+      },
+      {
+        "id": "auto-loan",
+        "name": "Crédito Automotriz",
+        "balance": 50000.0,
+        "annual_rate": 0.145,
+        "minimum_payment": 3500,
+        "due_day": 12,
+        "credit_limit": 180000
+      }
+    ],
+    "investments": [
+      {
+        "name": "Fondo de liquidez demo",
+        "value": 28000,
+        "principal": 26000
+      },
+      {
+        "name": "Portafolio diversificado demo",
+        "value": 46000,
+        "principal": 42000
+      },
+      {
+        "id": "balanced",
+        "name": "Plan Equilibrado",
+        "value": 20000.010000000002
+      },
+      {
+        "id": "conservative",
+        "name": "Plan Conservador",
+        "value": 10000.0
+      }
+    ],
+    "goals": [
+      {
+        "name": "Fondo de emergencia",
+        "saved": 28000,
+        "target": 90000
+      },
+      {
+        "name": "Próximo viaje",
+        "saved": 12000,
+        "target": 35000
+      }
+    ]
+  },
+  "payments": [
+    {
+      "plan_id": "balanced",
+      "created_at": 1789291168.5606022,
+      "row": {
+        "id": "txn-095ef60571d34dddb8d987cfcd230e9e",
+        "date": "2026-08-31",
+        "kind": "expense",
+        "amount_cents": 1000000,
+        "merchant": "Plan Equilibrado",
+        "category": "Inversiones",
+        "account_id": "checking",
+        "city": "Monterrey",
+        "method": "SPEI",
+        "recurring": 0,
+        "description": "Inversión confirmada · balanced"
+      },
+      "result": {
+        "transaction_id": "txn-095ef60571d34dddb8d987cfcd230e9e",
+        "confirmed": true,
+        "balance_after": 590898.46
+      }
+    },
+    {
+      "plan_id": "conservative",
+      "created_at": 1789291185.5400848,
+      "row": {
+        "id": "txn-432f8d7dd0604c9c8e05835d91920cd1",
+        "date": "2026-08-31",
+        "kind": "expense",
+        "amount_cents": 1000000,
+        "merchant": "Plan Conservador",
+        "category": "Inversiones",
+        "account_id": "checking",
+        "city": "Monterrey",
+        "method": "SPEI",
+        "recurring": 0,
+        "description": "Inversión confirmada · conservative"
+      },
+      "result": {
+        "transaction_id": "txn-432f8d7dd0604c9c8e05835d91920cd1",
+        "confirmed": true,
+        "balance_after": 580898.46
+      }
+    },
+    {
+      "debt_id": "auto-loan",
+      "created_at": 1789292382.6775086,
+      "row": {
+        "id": "txn-215a81ddc7704e3cb8ee47b4f21bb924",
+        "date": "2026-08-31",
+        "kind": "expense",
+        "amount_cents": 1800000,
+        "merchant": "Crédito Automotriz",
+        "category": "Créditos",
+        "account_id": "checking",
+        "city": "Monterrey",
+        "method": "SPEI",
+        "recurring": 0,
+        "description": "Abono único confirmado · auto-loan"
+      },
+      "result": {
+        "transaction_id": "txn-215a81ddc7704e3cb8ee47b4f21bb924",
+        "confirmed": true,
+        "balance_after": 629298.46,
+        "debt_after": {
+          "debt_id": "auto-loan",
+          "balance": 50000.0
+        }
+      }
+    },
+    {
+      "plan_id": "balanced",
+      "created_at": 1789292426.8646572,
+      "row": {
+        "id": "txn-4a7489657de34fc094b075c9ac256947",
+        "date": "2026-08-31",
+        "kind": "expense",
+        "amount_cents": 1000001,
+        "merchant": "Plan Equilibrado",
+        "category": "Inversiones",
+        "account_id": "checking",
+        "city": "Monterrey",
+        "method": "SPEI",
+        "recurring": 0,
+        "description": "Inversión confirmada · balanced"
+      },
+      "result": {
+        "transaction_id": "txn-4a7489657de34fc094b075c9ac256947",
+        "confirmed": true,
+        "balance_after": 619298.45
+      }
+    }
+  ]
+}

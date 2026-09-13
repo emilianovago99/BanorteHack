@@ -68,6 +68,7 @@ def generate(destination: Path = DATA_DIR):
             {"id": "card-classic", "name": "Tarjeta Clásica", "balance": 24500, "annual_rate": .36, "minimum_payment": 1800, "due_day": 25, "credit_limit": 60000},
             {"id": "personal-loan", "name": "Crédito personal", "balance": 48000, "annual_rate": .22, "minimum_payment": 2100, "due_day": 5, "credit_limit": 90000},
             {"id": "laptop", "name": "Laptop · meses sin intereses", "balance": 8400, "annual_rate": 0, "minimum_payment": 1400, "due_day": 18, "credit_limit": 16800},
+            {"id": "auto-loan", "name": "Crédito Automotriz", "balance": 68000, "annual_rate": .145, "minimum_payment": 3500, "due_day": 12, "credit_limit": 180000},
         ],
         "investments": [{"name": "Fondo de liquidez demo", "value": 28000, "principal": 26000}, {"name": "Portafolio diversificado demo", "value": 46000, "principal": 42000}],
         "goals": [{"name": "Fondo de emergencia", "saved": 28000, "target": 90000}, {"name": "Próximo viaje", "saved": 12000, "target": 35000}],
