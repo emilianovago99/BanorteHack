@@ -61,6 +61,12 @@ def confirm_debt_payment(debt_id: str, extra_payment: float) -> dict:
 
 
 @mcp.tool()
+def confirm_investment(plan_id: str, amount: float) -> dict:
+    """Confirma una inversión: registra el egreso y deduce el saldo."""
+    return repository().apply_investment(plan_id, amount)
+
+
+@mcp.tool()
 def get_investment_plans(amount: float = 10000) -> dict:
     """Tres planes educativos con riesgo y tasas hipotéticas."""
     return investment_plans(amount)
@@ -93,7 +99,7 @@ def report_query_issue(reason: Literal["not_understood", "out_of_scope", "no_dat
     """Devuelve una aclaración y ejemplos cuando no se entiende la consulta o no se puede obtener información. No inventa datos."""
     messages = {
         "not_understood": "No entendí lo que necesitas. Puedes preguntar por tus ingresos, gastos, deudas o inversiones.",
-        "out_of_scope": "No puedo resolver esa consulta con este perfil financiero. Puedo ayudarte a revisar tus finanzas del dataset.",
+        "out_of_scope": "No puedo procesar esa solicitud. Sin embargo, puedo ayudarte a consultar tus saldos, revisar tus deudas o simular inversiones.",
         "no_data": "No encontré datos para esa consulta. El dataset cubre enero de 2024 a agosto de 2026; prueba otro periodo o comercio.",
         "unavailable": "No pude conseguir la información en este momento. Intenta de nuevo en unos instantes.",
         "quota": "Gemini alcanzó el límite de solicitudes de este proyecto. No pude interpretar tu consulta con IA. Intenta cuando se restablezca la cuota."

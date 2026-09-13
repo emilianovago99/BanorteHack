@@ -74,7 +74,8 @@ function Surface({ messages, onAction, busy }: { messages: unknown[]; onAction: 
   function renderContent(id: string): ReactNode {
     const node = nodes.get(id)!;
     switch (node.component) {
-      case 'Column': case 'Row': return <View key={id} style={ui.stack}>{node.children?.map(render)}</View>;
+      case 'Column': return <View key={id} style={[ui.stack, node.variant === 'confirmation' && { width: '100%', maxWidth: 640, alignSelf: 'center', minHeight: 350, justifyContent: 'center' }]}>{node.children.map(render)}</View>;
+      case 'Row': return <View key={id} style={ui.stack}>{node.children.map(render)}</View>;
       case 'Text': return <Text key={id} style={node.variant === 'h2' ? ui.title : ui.body}>{node.text}</Text>;
       case 'Notice': return <View key={id} style={{ backgroundColor: theme.soft, borderRadius: 12, padding: 16 }}><Text style={ui.body}>{node.text}</Text></View>;
       case 'Metric': return <Panel key={id}><Text style={ui.caption}>{node.label}</Text><Text style={[ui.value, { color: node.tone === 'positive' ? '#15803d' : theme.accent }]}>{format(node.value, node.format)}</Text>{!!node.detail && <Text style={ui.caption}>{node.detail}</Text>}</Panel>;

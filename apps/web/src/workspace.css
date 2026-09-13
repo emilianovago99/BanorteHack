@@ -19,9 +19,9 @@ svg{flex-shrink:0}
 #root>main h1{margin-bottom:15px}
 #root>main p{margin-bottom:20px;line-height:1.65}
 .secondary{background:#fff;color:var(--red);border:1px solid #ebc6ce}
-.brand{display:flex;gap:9px;align-items:center;padding:0 8px;font-size:12px;font-weight:800;letter-spacing:1.5px;color:#d5002c;white-space:nowrap}
+.brand{display:flex;gap:14px;align-items:center;padding:0 12px;margin-bottom:30px;font-size:19px;font-weight:800;letter-spacing:1.5px;color:#d5002c;white-space:nowrap}
 .brand-light{font-weight:400;color:#39474a}
-.brand-mark{background:var(--red);color:#fff;display:grid;place-items:center;width:30px;height:33px;border-radius:8px 8px 8px 1px;font-family:serif;font-size:23px;font-style:italic;letter-spacing:-2px}
+.brand-mark{background:var(--red);color:#fff;display:grid;place-items:center;width:48px;height:53px;border-radius:12px 12px 12px 2px;font-family:serif;font-size:37px;font-style:italic;letter-spacing:-2px}
 .eyebrow{font-size:9px;letter-spacing:1.8px;font-weight:700;color:#98a4a5}
 .a2ui-column{display:flex;flex-direction:column;gap:20px}
 .a2ui-row{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:16px}
@@ -106,8 +106,8 @@ progress::-moz-progress-bar{background:#578d7d;border-radius:5px}
 .chart-container{height:300px}
 }
 @media(max-width:1250px){
-.brand{font-size:10px;gap:7px}
-.brand-mark{width:24px;height:28px;font-size:19px}
+.brand{font-size:16px;gap:11px}
+.brand-mark{width:38px;height:45px;font-size:30px}
 .a2ui-row{gap:10px}
 .metric-card{padding:18px 13px}
 .metric-card>strong{font-size:20px}
@@ -126,7 +126,7 @@ progress::-moz-progress-bar{background:#578d7d;border-radius:5px}
 @media(max-width:760px){
 .brand{justify-content:flex-start}
 .brand>span:last-child{display:inline}
-.brand{font-size:12px}
+.brand{font-size:19px;margin-bottom:15px}
 .a2ui-row{gap:12px}
 .metric-card{padding:18px}
 .metric-card>strong{font-size:22px}
@@ -138,18 +138,9 @@ progress::-moz-progress-bar{background:#578d7d;border-radius:5px}
 *{animation:none!important;scroll-behavior:auto!important;transition:none!important}
 }
 .login-shell{min-height:100dvh;display:grid;grid-template-columns:1.1fr 1fr;align-items:center;gap:8vw;padding:6vw;background:#f5f8f7}
-.login-story{display:flex;flex-direction:column;justify-content:space-between;gap:50px;max-width:580px}
+.login-story{display:flex;flex-direction:column;justify-content:center;gap:50px;max-width:580px}
 .login-story h1{font-size:clamp(34px,4.5vw,64px);letter-spacing:-2px;line-height:1.15;margin:20px 0}
 .login-story p,.login-card p{color:#718783;line-height:1.8}
-.login-preview{background:white;border:1px solid var(--line);border-radius:18px;padding:25px;margin-top:30px}
-.login-preview>span{font-size:11px;color:var(--muted)}
-.login-preview strong{display:block;margin-top:12px;font-size:19px}
-.login-bars{display:flex;align-items:flex-end;gap:14px;height:100px;margin-top:15px}
-.login-bars i{flex:1;background:#df0030;border-radius:7px 7px 0 0;height:35%}
-.login-bars i:nth-child(2){height:55%;opacity:.5}
-.login-bars i:nth-child(3){height:48%;opacity:.7}
-.login-bars i:nth-child(4){height:76%;background:#297563}
-.login-bars i:nth-child(5){height:95%;background:#203537}
 .login-card{background:#fff;padding:clamp(25px,4vw,56px);border-radius:22px;border:1px solid var(--line);max-width:480px;width:100%}
 .login-card h2{font-size:30px;letter-spacing:-1px;margin:16px 0}
 .login-card button{width:100%;margin:28px 0 18px;min-height:48px}
@@ -159,7 +150,6 @@ progress::-moz-progress-bar{background:#578d7d;border-radius:5px}
 .login-shell{grid-template-columns:1fr;padding:28px 20px;gap:30px}
 .login-story{gap:30px}
 .login-story h1{font-size:36px}
-.login-preview,.login-story>small{display:none}
 .login-card{max-width:none}
 .simulation-form input{font-size:16px}
 }
@@ -218,3 +208,13 @@ progress::-moz-progress-bar{background:#578d7d;border-radius:5px}
 .a2ui-actionable{min-width:0;display:flex;flex-direction:column;gap:12px}
 .a2ui-actionable>section{flex:1}
 .a2ui-actionable>button{white-space:normal}
+
+/* A transaction receipt stays readable and centered until its local close action. */
+.a2ui-confirmation{width:min(100%,640px);min-height:60dvh;margin-inline:auto;justify-content:center;text-align:center;gap:24px}
+.a2ui-confirmation>.a2ui-row{grid-template-columns:repeat(2,minmax(0,1fr))}
+.a2ui-confirmation>p{overflow-wrap:anywhere}
+.a2ui-confirmation>.context-action{align-self:center;min-width:180px}
+.plan-amount{display:flex;flex-direction:column;gap:8px;margin-block:16px;text-align:left}
+.plan-amount input{width:100%;min-width:0}
+.plan-amount-error{font-size:13px;color:#b42318}
+@media(max-width:420px){.a2ui-confirmation>.a2ui-row{grid-template-columns:1fr}}

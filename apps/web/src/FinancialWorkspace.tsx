@@ -44,8 +44,7 @@ export function FinancialWorkspace() {
 
   useEffect(() => { void refreshBalance(); }, [refreshBalance]);
   useEffect(() => {
-    if (viewMode === 'surface') surfaceRef.current?.focus();
-    if (viewMode === 'zero') inputRef.current?.focus();
+    inputRef.current?.focus();
   }, [viewMode]);
 
   function resetToZero(balanceAfter?: number) {
@@ -73,9 +72,7 @@ export function FinancialWorkspace() {
       if (!Array.isArray(next.a2ui)) throw new Error('No se pudo generar la vista. Intenta otra consulta.');
       
       if (next.transaction?.confirmed) {
-        resetToZero(next.transaction.balance_after);
-        setPrompt('');
-        return;
+        setAccount(prev => prev ? { ...prev, balance: next.transaction!.balance_after } : prev);
       }
       
       if (next.simulation) simulation.current = next.simulation;
@@ -94,10 +91,18 @@ export function FinancialWorkspace() {
   }
 
   function onAction(action: UIAction) {
+    if (action.action.name === 'return_to_zero') {
+      if (inFlight.current) return;
+      resetToZero();
+      setPrompt('');
+      return;
+    }
     const labels: Record<string, string> = { select_plan: 'Explorar este plan de inversión', simulate_investment: 'Actualizar mi simulación', compare_plans: 'Comparar otros planes', simulate_debt: 'Simular un abono adicional a este crédito', show_transactions: 'Ver los movimientos del periodo', confirm_debt_payment: 'Confirmar el abono único a este crédito' };
     void query(labels[action.action.name] ?? 'Explorar escenario', action);
   }
   function send(event: FormEvent) { event.preventDefault(); void query(prompt); }
+  const hasPendingTransaction = viewMode === 'surface' && Boolean(view?.a2ui?.some((msg: any) => msg.type === 'surface' && msg.components?.some((node: any) => node.transactionalAction?.kind === 'mutation')));
+
 
   return <div className={`lazy-workspace lazy-${viewMode}`} data-view-mode={viewMode} data-domain={view?.domain ?? 'resumen'}>
     <main className="lazy-canvas">
@@ -115,11 +120,10 @@ export function FinancialWorkspace() {
       </section>}
       {error && <div className="error-banner query-error" role="alert"><p>{error}</p></div>}
     </main>
-
     <form className="lazy-composer" onSubmit={send}>
       <label className="visually-hidden" htmlFor="financial-message">Pregunta sobre tus finanzas</label>
-      <textarea ref={inputRef} id="financial-message" placeholder="¿Qué quieres hacer con tu dinero?" value={prompt} onChange={event => setPrompt(event.target.value)} maxLength={2000} rows={1} disabled={busy} onKeyDown={event => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); if (!busy) void query(prompt); } }} />
-      <button className="send-button" disabled={busy || !prompt.trim()} aria-label="Enviar mensaje"><Icon name="send" /></button>
+      <textarea ref={inputRef} id="financial-message" placeholder={hasPendingTransaction ? "Confirma la operación para continuar" : "¿Qué quieres hacer con tu dinero?"} value={prompt} onChange={event => setPrompt(event.target.value)} maxLength={2000} rows={1} disabled={busy || hasPendingTransaction} onKeyDown={event => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); if (!busy && !hasPendingTransaction) void query(prompt); } }} />
+      <button className="send-button" disabled={busy || hasPendingTransaction || !prompt.trim()} aria-label="Enviar mensaje"><Icon name="send" /></button>
     </form>
     {viewMode === 'zero' && <div className="zero-chips" aria-label="Ejemplos para empezar">{['Revisar deudas', 'Analizar gastos', 'Explorar inversiones'].map(text => <button key={text} type="button" disabled={busy} onClick={() => void query(text)}>{text}</button>)}</div>}
   </div>;

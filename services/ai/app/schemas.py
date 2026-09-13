@@ -75,7 +75,7 @@ class ChatResponse(BaseModel):
 
 class ClientAction(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    name: Literal["select_plan", "simulate_investment", "compare_plans", "simulate_debt", "show_transactions", "confirm_debt_payment"]
+    name: Literal["select_plan", "simulate_investment", "compare_plans", "simulate_debt", "show_transactions", "confirm_debt_payment", "confirm_investment"]
     surfaceId: str = Field(max_length=100)
     sourceComponentId: str = Field(max_length=100)
     timestamp: str = Field(max_length=60)
@@ -85,8 +85,9 @@ class ClientAction(BaseModel):
     @classmethod
     def valid_context(cls, value, info):
         from app.a2ui_validation import validate_contract
+        context_dict = value.model_dump() if hasattr(value, "model_dump") else value
         if "name" in info.data:
-            validate_contract("event", {"name": info.data["name"], "context": value})
+            validate_contract("event", {"name": info.data["name"], "context": context_dict})
         return value
 
 
@@ -123,11 +124,16 @@ class SimulationInput(ContractInput):
 class DebtInput(ContractInput):
     event_name = "simulate_debt"
     model_config = ConfigDict(extra="forbid")
-    debt_id: Literal["card-classic", "personal-loan", "laptop"]
+    debt_id: Literal["card-classic", "personal-loan", "laptop", "auto-loan"]
     extra_payment: float = Field(default=500, ge=0, le=100000)
 
 
 class PaymentInput(ContractInput):
     event_name = "confirm_debt_payment"
-    debt_id: Literal["card-classic", "personal-loan", "laptop"]
+    debt_id: Literal["card-classic", "personal-loan", "laptop", "auto-loan"]
     extra_payment: float = Field(gt=0, le=100000, allow_inf_nan=False)
+
+class InvestmentInput(ContractInput):
+    event_name = "confirm_investment"
+    plan_id: Literal["conservative", "balanced", "growth"]
+    amount: float = Field(default=10000, ge=100, le=1000000)

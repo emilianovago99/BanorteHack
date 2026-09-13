@@ -44,7 +44,7 @@
       {
         "id": "personal-loan",
         "name": "Crédito personal",
-        "balance": 46500.0,
+        "balance": 48000,
         "annual_rate": 0.22,
         "minimum_payment": 2100,
         "due_day": 5,
@@ -53,11 +53,20 @@
       {
         "id": "laptop",
         "name": "Laptop · meses sin intereses",
-        "balance": 7900.0,
+        "balance": 8400,
         "annual_rate": 0,
         "minimum_payment": 1400,
         "due_day": 18,
         "credit_limit": 16800
+      },
+      {
+        "id": "auto-loan",
+        "name": "Crédito Automotriz",
+        "balance": 50000.0,
+        "annual_rate": 0.145,
+        "minimum_payment": 3500,
+        "due_day": 12,
+        "credit_limit": 180000
       }
     ],
     "investments": [
@@ -70,6 +79,16 @@
         "name": "Portafolio diversificado demo",
         "value": 46000,
         "principal": 42000
+      },
+      {
+        "id": "balanced",
+        "name": "Plan Equilibrado",
+        "value": 20000.010000000002
+      },
+      {
+        "id": "conservative",
+        "name": "Plan Conservador",
+        "value": 10000.0
       }
     ],
     "goals": [
@@ -87,107 +106,95 @@
   },
   "payments": [
     {
-      "debt_id": "personal-loan",
-      "created_at": 1789273050.25236,
+      "plan_id": "balanced",
+      "created_at": 1789291168.5606022,
       "row": {
-        "id": "txn-feb488cc695c41bba5a70b13b02b93e7",
+        "id": "txn-095ef60571d34dddb8d987cfcd230e9e",
         "date": "2026-08-31",
         "kind": "expense",
-        "amount_cents": 50000,
-        "merchant": "Crédito personal",
+        "amount_cents": 1000000,
+        "merchant": "Plan Equilibrado",
+        "category": "Inversiones",
+        "account_id": "checking",
+        "city": "Monterrey",
+        "method": "SPEI",
+        "recurring": 0,
+        "description": "Inversión confirmada · balanced"
+      },
+      "result": {
+        "transaction_id": "txn-095ef60571d34dddb8d987cfcd230e9e",
+        "confirmed": true,
+        "balance_after": 590898.46
+      }
+    },
+    {
+      "plan_id": "conservative",
+      "created_at": 1789291185.5400848,
+      "row": {
+        "id": "txn-432f8d7dd0604c9c8e05835d91920cd1",
+        "date": "2026-08-31",
+        "kind": "expense",
+        "amount_cents": 1000000,
+        "merchant": "Plan Conservador",
+        "category": "Inversiones",
+        "account_id": "checking",
+        "city": "Monterrey",
+        "method": "SPEI",
+        "recurring": 0,
+        "description": "Inversión confirmada · conservative"
+      },
+      "result": {
+        "transaction_id": "txn-432f8d7dd0604c9c8e05835d91920cd1",
+        "confirmed": true,
+        "balance_after": 580898.46
+      }
+    },
+    {
+      "debt_id": "auto-loan",
+      "created_at": 1789292382.6775086,
+      "row": {
+        "id": "txn-215a81ddc7704e3cb8ee47b4f21bb924",
+        "date": "2026-08-31",
+        "kind": "expense",
+        "amount_cents": 1800000,
+        "merchant": "Crédito Automotriz",
         "category": "Créditos",
         "account_id": "checking",
         "city": "Monterrey",
         "method": "SPEI",
         "recurring": 0,
-        "description": "Abono único confirmado · personal-loan"
+        "description": "Abono único confirmado · auto-loan"
       },
       "result": {
-        "transaction_id": "txn-feb488cc695c41bba5a70b13b02b93e7",
+        "transaction_id": "txn-215a81ddc7704e3cb8ee47b4f21bb924",
         "confirmed": true,
-        "balance_after": 666798.46,
+        "balance_after": 629298.46,
         "debt_after": {
-          "debt_id": "personal-loan",
-          "balance": 47500.0
+          "debt_id": "auto-loan",
+          "balance": 50000.0
         }
       }
     },
     {
-      "debt_id": "personal-loan",
-      "created_at": 1789273162.3976462,
+      "plan_id": "balanced",
+      "created_at": 1789292426.8646572,
       "row": {
-        "id": "txn-72809c1e22e1411dab080ead907c12b0",
+        "id": "txn-4a7489657de34fc094b075c9ac256947",
         "date": "2026-08-31",
         "kind": "expense",
-        "amount_cents": 50000,
-        "merchant": "Crédito personal",
-        "category": "Créditos",
+        "amount_cents": 1000001,
+        "merchant": "Plan Equilibrado",
+        "category": "Inversiones",
         "account_id": "checking",
         "city": "Monterrey",
         "method": "SPEI",
         "recurring": 0,
-        "description": "Abono único confirmado · personal-loan"
+        "description": "Inversión confirmada · balanced"
       },
       "result": {
-        "transaction_id": "txn-72809c1e22e1411dab080ead907c12b0",
+        "transaction_id": "txn-4a7489657de34fc094b075c9ac256947",
         "confirmed": true,
-        "balance_after": 666298.46,
-        "debt_after": {
-          "debt_id": "personal-loan",
-          "balance": 47000.0
-        }
-      }
-    },
-    {
-      "debt_id": "personal-loan",
-      "created_at": 1789273676.748767,
-      "row": {
-        "id": "txn-86fa855506484f1e98e8429190a0dec6",
-        "date": "2026-08-31",
-        "kind": "expense",
-        "amount_cents": 50000,
-        "merchant": "Crédito personal",
-        "category": "Créditos",
-        "account_id": "checking",
-        "city": "Monterrey",
-        "method": "SPEI",
-        "recurring": 0,
-        "description": "Abono único confirmado · personal-loan"
-      },
-      "result": {
-        "transaction_id": "txn-86fa855506484f1e98e8429190a0dec6",
-        "confirmed": true,
-        "balance_after": 665798.46,
-        "debt_after": {
-          "debt_id": "personal-loan",
-          "balance": 46500.0
-        }
-      }
-    },
-    {
-      "debt_id": "laptop",
-      "created_at": 1789273826.6047742,
-      "row": {
-        "id": "txn-3cf1b7a1b97b485ba6911701c8ed6796",
-        "date": "2026-08-31",
-        "kind": "expense",
-        "amount_cents": 50000,
-        "merchant": "Laptop · meses sin intereses",
-        "category": "Créditos",
-        "account_id": "checking",
-        "city": "Monterrey",
-        "method": "SPEI",
-        "recurring": 0,
-        "description": "Abono único confirmado · laptop"
-      },
-      "result": {
-        "transaction_id": "txn-3cf1b7a1b97b485ba6911701c8ed6796",
-        "confirmed": true,
-        "balance_after": 665298.46,
-        "debt_after": {
-          "debt_id": "laptop",
-          "balance": 7900.0
-        }
+        "balance_after": 619298.45
       }
     }
   ]

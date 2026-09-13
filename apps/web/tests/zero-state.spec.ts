@@ -109,7 +109,7 @@ test('fallo de red sale de loading y permite reintentar el texto', async ({ page
   await expect(page.getByRole('alert')).toContainText('No se pudo consultar');
   await expect(page.getByLabel('Pregunta sobre tus finanzas')).toHaveValue('Muéstrame mis deudas');
   await page.getByRole('button', { name: 'Enviar mensaje' }).click();
-  await expect(page.getByRole('button', { name: 'Simular abono de $500' })).toHaveCount(3);
+  await expect(page.getByRole('button', { name: 'Simular abono' })).toHaveCount(4);
 });
 
 
@@ -153,8 +153,8 @@ test('historial invisible conserva los últimos seis mensajes y limita cada cont
 test('la simulación genera un botón A2UI de confirmación y envía una sola acción', async ({ page }) => {
   await enter(page);
   await ask(page, 'Muéstrame mis deudas');
-  await page.getByRole('button', { name: 'Simular abono de $500' }).first().click();
-  const confirm = page.getByRole('button', { name: 'Confirmar abono único de $500.00 MXN' });
+  await page.getByRole('button', { name: 'Simular abono' }).first().click();
+  const confirm = page.getByRole('button', { name: 'Confirmar abono' });
   await expect(confirm).toBeVisible();
   await expect(page.getByText(/no programa pagos mensuales/)).toBeVisible();
   let calls = 0;
@@ -189,4 +189,38 @@ test('entrada inválida pide clarificación y permite volver a una consulta anal
   await ask(page, '¿En qué gasté más este mes?');
   await expect(page.locator('canvas')).toHaveCount(2);
   await expect(page.locator('.finance-notice')).toHaveCount(0);
+});
+
+test('monto editable y cierre local de confirmacion centrada', async ({ page }) => {
+  await enter(page);
+  await ask(page, 'Quiero invertir');
+  const amount = page.getByRole('spinbutton', { name: 'Monto a invertir en Equilibrio' });
+  await amount.fill('1250.50');
+  let calls = 0;
+  await page.route('**/api/actions', async route => {
+    const body = route.request().postDataJSON();
+    calls++;
+    expect(body.action.name).toBe('confirm_investment');
+    expect(body.action.context.amount).toBe(1250.50);
+    await route.fulfill({ json: {
+      surface_id: 'receipt-demo', message: 'Inversión confirmada', domain: 'inversiones', tools_used: [],
+      a2ui: [
+        { version: 'v0.9', createSurface: { surfaceId: 'receipt-demo', catalogId: 'lazy-bank:finance-v1' } },
+        { version: 'v0.9', updateDataModel: { surfaceId: 'receipt-demo', path: '/', value: {} } },
+        { version: 'v0.9', updateComponents: { surfaceId: 'receipt-demo', components: [
+          { id: 'root', component: 'Column', children: ['receipt'] },
+          { id: 'receipt', component: 'Column', variant: 'confirmation', children: ['title', 'close'] },
+          { id: 'title', component: 'Text', text: 'Inversión confirmada', variant: 'h2' },
+          { id: 'close', component: 'Button', text: 'Aceptar', action: { event: { name: 'return_to_zero', context: {} } } }
+        ] } }
+      ]
+    } });
+  });
+  await page.getByRole('button', { name: /Invertir.*1,250.50.*Equilibrio/ }).click();
+  await expect(page.getByRole('heading', { name: 'Inversión confirmada' })).toBeVisible();
+  const box = await page.locator('.a2ui-confirmation').boundingBox();
+  expect(box!.width).toBeLessThanOrEqual(640);
+  await page.getByRole('button', { name: 'Aceptar' }).click();
+  await expect(page.getByRole('region', { name: 'Estado Cero' })).toBeVisible();
+  expect(calls).toBe(1);
 });

@@ -1,6 +1,6 @@
 import { Component, useMemo, useState, type ReactNode } from 'react';
 import { z } from 'zod';
-import { uiActionSchema, eventSchema, type UIAction, type TransactionalAction } from '@lazy-bank/contracts';
+import { uiActionSchema, eventSchema, investmentInputSchema, type UIAction, type TransactionalAction } from '@lazy-bank/contracts';
 import { DatasetChart } from './index';
 
 import { parseSurface, seriesSchema, type Node, type Event } from './protocol';
@@ -29,6 +29,52 @@ function Simulator({ data, event, onEvent, busy }: { data: unknown; event: Event
   </form>;
 }
 
+function PlanCardComponent({ node, data, busy, send }: {
+  node: Extract<Node, { component: 'PlanCard' }>; data: unknown; busy: boolean;
+  send: (node: Node, event: Event) => void;
+}) {
+  const plan = z.object({ id: z.string(), name: z.string(), risk: z.string(), annual_rate: numeric, description: z.string() }).parse(data);
+  const closing = node.transactionalAction;
+  if (plan.id !== closing.event.context.plan_id) throw new Error('Acción incompatible con la tarjeta.');
+  const [amount, setAmount] = useState(String(node.amount ?? closing.event.context.amount));
+  const valid = amount.trim() !== '' && investmentInputSchema.safeParse({ plan_id: plan.id, amount: Number(amount) }).success;
+  const formattedAmount = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(Number(amount));
+  const closingLabel = closing.kind === 'mutation'
+    ? valid ? 'Invertir ' + formattedAmount + ' en ' + plan.name : 'Confirmar inversión'
+    : closing.label;
+  function withAmount(event: Event): Event {
+    return eventSchema.parse({ ...event, context: { ...event.context, amount: Number(amount) } });
+  }
+  return <div className="a2ui-actionable">
+    <section className={'plan-card ' + (plan.id === 'balanced' ? 'featured' : '')}>
+      <span className="risk-badge">Riesgo {plan.risk.toLowerCase()}</span>
+      <h3>{plan.name}</h3>
+      <div className="plan-rate">{(plan.annual_rate * 100).toFixed(0)}<span>%</span></div>
+      <small>tasa anual hipotética</small><p>{plan.description}</p>
+      <label className="plan-amount">Monto a invertir
+        <input aria-label={'Monto a invertir en ' + plan.name} type="number" min="100" max="1000000" step="0.01" required
+          value={amount} onChange={event => setAmount(event.target.value)} disabled={busy} aria-invalid={!valid} />
+      </label>
+      {!valid && <p className="plan-amount-error" role="alert">Ingresa de $100 a $1,000,000, con máximo dos decimales.</p>}
+      {node.action && <button type="button" className="secondary" disabled={busy || !valid}
+        onClick={() => node.action && send(node, withAmount(node.action.event))}>Explorar {plan.name}</button>}
+    </section>
+    <TransactionalButton action={{ ...closing, label: closingLabel }} busy={busy || !valid}
+      onConfirm={() => { if (valid) send(node, withAmount(closing.event)); }} />
+  </div>;
+}
+
+function DebtCardComponent({ node, data, busy, send }: { node: any; data: unknown; busy: boolean; send: (node: any, event: any) => void }) {
+  const debt = z.object({ name: z.string(), balance: numeric, annual_rate: numeric, minimum_payment: numeric, due_day: numeric, credit_limit: numeric }).parse(data);
+  const [amount, setAmount] = useState(String(node.action?.event?.context?.extra_payment || 500));
+  const closing = node.transactionalAction;
+  const content = <section className="finance-panel debt-card"><span className="eyebrow">CRÉDITO ACTIVO</span><h3>{debt.name}</h3><strong className="debt-balance">{money(debt.balance)}</strong><progress max={debt.credit_limit} value={debt.balance} /><dl><div><dt>Tasa anual</dt><dd>{Math.round(debt.annual_rate*100)}%</dd></div><div><dt>Pago mínimo</dt><dd>{money(debt.minimum_payment)}</dd></div><div><dt>Día de pago</dt><dd>{debt.due_day}</dd></div></dl><div style={{ display: 'flex', gap: '8px', marginTop: '14px' }}><input type="number" value={amount} onChange={e => setAmount(e.target.value)} min="0" max={debt.balance} disabled={busy || !node.action} style={{ width: '100%' }} /><button className="secondary" disabled={busy || !node.action} onClick={() => node.action && send(node, { ...node.action.event, context: { ...node.action.event.context, extra_payment: Number(amount) } })}>Simular abono</button></div></section>;
+  if (closing) {
+      return <div className="a2ui-actionable">{content}<TransactionalButton action={closing} busy={busy} onConfirm={() => send(node, { ...closing.event, context: { ...closing.event.context, extra_payment: Number(amount) } })} /></div>;
+  }
+  return content;
+}
+
 function TransactionalButton({ action, busy, onConfirm }: { action: TransactionalAction; busy: boolean; onConfirm: () => void }) {
   return <button type="button" className="context-action" disabled={busy} onClick={onConfirm} data-action-kind={action.kind}>{action.label}<span aria-hidden="true"> →</span></button>;
 }
@@ -47,19 +93,16 @@ function SurfaceView({ messages, onAction, busy }: { messages: unknown[]; onActi
   function render(id: string): ReactNode {
     const node = nodes.get(id)!;
     const content = renderContent(id);
+    if (node.component === 'DebtCard' || node.component === 'PlanCard') return content;
     if (!('transactionalAction' in node) || !node.transactionalAction) return content;
     const closing = node.transactionalAction;
-    if (node.component === 'PlanCard' || node.component === 'DebtCard') {
-      const data = bound(node) as Record<string, unknown>;
-      const key = node.component === 'PlanCard' ? 'plan_id' : 'debt_id';
-      if (data?.id !== (closing.event.context as Record<string, unknown>)[key]) throw new Error('Acción incompatible con la tarjeta.');
-    }
+
     return <div key={id} className="a2ui-actionable">{content}<TransactionalButton action={closing} busy={busy} onConfirm={() => send(node, closing.event)} /></div>;
   }
   function renderContent(id: string): ReactNode {
     const node = nodes.get(id)!;
     switch (node.component) {
-      case 'Column': return <div key={id} className="a2ui-column">{node.children?.map(render)}</div>;
+      case 'Column': return <div key={id} className={node.variant === 'confirmation' ? 'a2ui-column a2ui-confirmation' : 'a2ui-column'}>{node.children?.map(render)}</div>;
       case 'Row': return <div key={id} className="a2ui-row">{node.children?.map(render)}</div>;
       case 'Text': return node.variant === 'h2' ? <h2 key={id}>{node.text}</h2> : <p key={id}>{node.text}</p>;
       case 'Notice': return <aside key={id} className="finance-notice"><span aria-hidden="true">ⓘ</span><p>{node.text}</p></aside>;
@@ -67,8 +110,8 @@ function SurfaceView({ messages, onAction, busy }: { messages: unknown[]; onActi
       case 'FinancialChart': { const data = seriesSchema.parse(bound(node)); if (data.series.some(item => item.values.length !== data.labels.length)) throw new Error('Serie inválida.'); return <DatasetChart key={id} title={node.title ?? ''} type={node.chartType} palette={node.palette} {...data} />; }
       case 'Button': return <button key={id} className="context-action" disabled={busy} onClick={() => send(node, node.action.event)}>{node.text}<span aria-hidden="true"> →</span></button>;
       case 'DataTable': { const rows = z.array(z.record(z.string(), z.unknown())).max(100).parse(bound(node)); return <section key={id} className="finance-panel"><div className="panel-heading"><h3>{node.title}</h3><span className="panel-unit">{rows.length} registros</span></div><div className="table-scroll"><table><thead><tr>{node.columns?.map(col => <th key={col.key}>{col.label}</th>)}</tr></thead><tbody>{rows.map((row, i) => <tr key={i}>{node.columns?.map(col => <td key={col.key} className={col.key === 'kind' ? 'type-cell' : ''}>{col.key === 'kind' ? row[col.key] === 'income' ? 'Ingreso' : 'Gasto' : format(row[col.key], col.format)}</td>)}</tr>)}</tbody></table>{!rows.length && <p className="empty-state">No hay movimientos con estos filtros.</p>}</div></section>; }
-      case 'PlanCard': { const plan = z.object({ id: z.string(), name: z.string(), risk: z.string(), annual_rate: numeric, description: z.string() }).parse(bound(node)); return <section key={id} className={`plan-card ${plan.id === 'balanced' ? 'featured' : ''}`}><span className="risk-badge">Riesgo {plan.risk.toLowerCase()}</span><h3>{plan.name}</h3><div className="plan-rate">{(plan.annual_rate * 100).toFixed(0)}<span>%</span></div><small>tasa anual hipotética</small><p>{plan.description}</p><div className="plan-capital">Capital inicial <strong>{money(node.amount ?? 0)}</strong></div></section>; }
-      case 'DebtCard': { const debt = z.object({ name: z.string(), balance: numeric, annual_rate: numeric, minimum_payment: numeric, due_day: numeric, credit_limit: numeric }).parse(bound(node)); return <section key={id} className="finance-panel debt-card"><span className="eyebrow">CRÉDITO ACTIVO</span><h3>{debt.name}</h3><strong className="debt-balance">{money(debt.balance)}</strong><progress max={debt.credit_limit} value={debt.balance} /><dl><div><dt>Tasa anual</dt><dd>{Math.round(debt.annual_rate*100)}%</dd></div><div><dt>Pago mínimo</dt><dd>{money(debt.minimum_payment)}</dd></div><div><dt>Día de pago</dt><dd>{debt.due_day}</dd></div></dl><button className="secondary" disabled={busy || !node.action} onClick={() => node.action && send(node, node.action.event)}>Simular abono de $500</button></section>; }
+      case 'PlanCard': return <PlanCardComponent key={id} node={node} data={bound(node)} busy={busy} send={send} />;
+      case 'DebtCard': return <DebtCardComponent key={id} node={node} data={bound(node)} busy={busy} send={send} />;
       case 'Simulator': return <Simulator key={id} data={bound(node)} event={node.action.event} busy={busy} onEvent={event => send(node, event)} />;
       case 'BudgetList': { const rows = z.array(z.object({ category: z.string(), budget: numeric, spent: numeric, percent: numeric, remaining: numeric })).parse(bound(node)); return <section key={id} className="finance-panel"><h3>{node.title}</h3><div className="progress-list">{rows.map(row => <div key={row.category} className={row.percent > 100 ? 'over-budget' : ''}><div className="progress-label"><strong>{row.category}</strong><span>{money(row.spent)} <small>/ {money(row.budget)}</small></span></div><progress max="100" value={Math.min(row.percent, 100)} /><small>{row.percent > 100 ? `${money(-row.remaining)} por encima del presupuesto` : `${money(row.remaining)} disponibles`}</small></div>)}</div></section>; }
       case 'GoalList': { const rows = z.array(z.object({ name: z.string(), saved: numeric, target: numeric })).parse(bound(node)); return <section key={id} className="finance-panel"><h3>{node.title}</h3><div className="progress-list">{rows.map(row => <div key={row.name}><div className="progress-label"><strong>{row.name}</strong><span>{Math.round(row.saved/row.target*100)}%</span></div><progress max={row.target} value={row.saved} /><small>{money(row.saved)} de {money(row.target)}</small></div>)}</div></section>; }

@@ -20,6 +20,11 @@ ROOT = Path(__file__).resolve().parents[3]
 def data_dir(tmp_path):
     for name in ("profile.json", "transactions.csv"):
         shutil.copyfile(ROOT / "datasets" / "synthetic" / name, tmp_path / name)
+    # These scenarios require an open laptop credit, even after demo users pay it off.
+    profile_path = tmp_path / "profile.json"
+    profile = json.loads(profile_path.read_text(encoding="utf-8"))
+    next(debt for debt in profile["debts"] if debt["id"] == "laptop")["balance"] = 8400
+    profile_path.write_text(json.dumps(profile), encoding="utf-8")
     return tmp_path
 
 
@@ -237,3 +242,89 @@ def test_identical_payment_allowed_after_dedup_window(repo, monkeypatch):
     second = repo.apply_debt_payment("card-classic", 500)
     assert second["transaction_id"] != first["transaction_id"]
     assert second["balance_after"] == first["balance_after"] - 500
+
+
+def test_investment_accepts_legacy_holdings_and_debt_payment_afterward(repo, data_dir):
+    from copy import deepcopy
+    legacy = deepcopy(repo.profile["investments"])
+    assert any("id" not in item for item in legacy)
+    before = repo.overview()["balance"]
+    investment = repo.apply_investment("conservative", 100)
+    assert investment["balance_after"] == pytest.approx(before - 100)
+    assert [item for item in repo.profile["investments"] if item.get("id") != "conservative"] == [item for item in legacy if item.get("id") != "conservative"]
+    position = next(item for item in repo.profile["investments"] if item.get("id") == "conservative")
+    assert position["value"] >= 100
+    assert repo.apply_investment("conservative", 100)["transaction_id"] == investment["transaction_id"]
+
+    payment = repo.apply_debt_payment("card-classic", 100)
+    assert payment["balance_after"] == pytest.approx(before - 200)
+    assert repo.apply_debt_payment("card-classic", 100)["transaction_id"] == payment["transaction_id"]
+    assert len(repo.payments) == 2
+
+    restarted = FinancialRepository(data_dir)
+    try:
+        assert restarted.overview()["balance"] == pytest.approx(before - 200)
+        assert restarted.profile["investments"] == repo.profile["investments"]
+        assert restarted.apply_debt_payment("card-classic", 100)["transaction_id"] == payment["transaction_id"]
+    finally:
+        restarted.db.close()
+
+
+def test_gateway_investment_then_debt_payload_executes_mutations(gateway, data_dir):
+    before = gateway.get("/api/account").json()["balance"]
+    view_response = gateway.post("/api/chat", json={"message": "Quiero invertir $100"})
+    assert view_response.status_code == 200
+    view = view_response.json()
+    card = next(node for node in view["a2ui"][2]["updateComponents"]["components"] if node["component"] == "PlanCard")
+    action = action_from(view, card, closing=True)
+    # Support a card that first opens a projection before presenting confirmation.
+    if action["action"]["name"] == "select_plan":
+        selected = gateway.post("/api/actions", json=action)
+        assert selected.status_code == 200
+        view = selected.json()
+        card = next(node for node in view["a2ui"][2]["updateComponents"]["components"]
+                    if node.get("transactionalAction", {}).get("event", {}).get("name") == "confirm_investment")
+        action = action_from(view, card, closing=True)
+    assert action["action"]["name"] == "confirm_investment"
+    assert action["action"]["context"]["amount"] == 100
+    confirmed = gateway.post("/api/actions", json=action)
+    assert confirmed.status_code == 200, confirmed.text
+    receipt = confirmed.json()["transaction"]
+    assert receipt["confirmed"] is True
+    assert receipt["debt_after"] is None
+    assert receipt["balance_after"] == pytest.approx(before - 100)
+    assert gateway.get("/api/account").json()["balance"] == pytest.approx(before - 100)
+
+    debts = gateway.post("/api/chat", json={"message": "Mis deudas"}).json()
+    card = next(node for node in debts["a2ui"][2]["updateComponents"]["components"] if node["component"] == "DebtCard")
+    payment_action = action_from(debts, card, closing=True)
+    payment_action["action"]["context"]["extra_payment"] = 100
+    paid = gateway.post("/api/actions", json=payment_action)
+    assert paid.status_code == 200, paid.text
+    assert paid.json()["transaction"]["balance_after"] == pytest.approx(before - 200)
+    journal = json.loads((data_dir / "payments.json").read_text(encoding="utf-8"))["payments"]
+    assert len(journal) == 2
+    assert journal[0]["plan_id"] == action["action"]["context"]["plan_id"]
+    assert journal[1]["debt_id"] == payment_action["action"]["context"]["debt_id"]
+
+
+def test_demo_four_debts_and_payoff_receipt(gateway):
+    view = gateway.post("/api/chat", json={"message": "Mis deudas"}).json()
+    nodes = view["a2ui"][2]["updateComponents"]["components"]
+    cards = [node for node in nodes if node["component"] == "DebtCard"]
+    assert len(cards) == 4
+    card = next(node for node in cards if node["transactionalAction"]["event"]["context"]["debt_id"] == "laptop")
+    action = action_from(view, card, closing=True)
+    action["action"]["context"]["extra_payment"] = 8400
+    paid = gateway.post("/api/actions", json=action)
+    assert paid.status_code == 200, paid.text
+    receipt_nodes = paid.json()["a2ui"][2]["updateComponents"]["components"]
+    column = next(node for node in receipt_nodes if node.get("variant") == "confirmation")
+    close = next(node for node in receipt_nodes if node.get("text") == "Aceptar")
+    assert close["id"] in column["children"]
+    assert close["action"]["event"] == {"name": "return_to_zero", "context": {}}
+    updated = gateway.post("/api/chat", json={"message": "Mis deudas"}).json()
+    nodes = updated["a2ui"][2]["updateComponents"]["components"]
+    assert len([node for node in nodes if node["component"] == "DebtCard"]) == 3
+    metric = next(node for node in nodes if node.get("label") == "Créditos activos")
+    assert metric["value"] == 3

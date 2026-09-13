@@ -9,6 +9,7 @@ ACTION_TOOLS = {
     "simulate_investment": "project_investment",
     "simulate_debt": "simulate_debt_payoff",
     "confirm_debt_payment": "confirm_debt_payment",
+    "confirm_investment": "confirm_investment",
     "compare_plans": "get_investment_plans",
     "show_transactions": "search_transactions",
 }
@@ -24,6 +25,16 @@ def response(surface, message, domain, tools, interpretation="local", period=Non
     chart = next((item for item in surface.components if item["component"] == "FinancialChart"), None)
     data = surface.model[chart["data"]["path"].lstrip("/")] if chart else {"labels": [], "series": [{"values": []}]}
     return ChatResponse(message=message, domain=domain, visualization=Visualization(type=chart["chartType"] if chart else "bar", title=chart["title"] if chart else "Resumen", labels=data["labels"], values=data["series"][0]["values"]), a2ui=surface.finish(), surface_id=surface.id, tools_used=tools.calls, interpretation=interpretation, period=period, simulation=simulation, transaction=transaction)
+
+
+def confirmation_response(result, title, message, domain, metrics, tools):
+    surface = Surface()
+    surface.body.append(surface.text(title, "h2"))
+    surface.body.append(surface.row(*(surface.metric(label, value) for label, value in metrics)))
+    surface.body.append(surface.text(f"Operación registrada en el perfil de demostración. Folio: {result['transaction_id']}"))
+    surface.body.append(surface.button("Aceptar", "return_to_zero", {}))
+    surface.body = [surface.node("Column", variant="confirmation", children=list(surface.body))]
+    return response(surface, message, domain, tools, transaction=result)
 
 
 async def render_plan(plan, tools, interpretation="local"):
@@ -79,7 +90,8 @@ async def render_plan(plan, tools, interpretation="local"):
         message = f"Tus suscripciones suman {money(data['monthly_total'])} al mes. Si se mantienen, equivalen a {money(data['annual_total'])} al año."
     elif domain == "deudas":
         data = await tools.call("get_debts")
-        surface.body.append(surface.row(surface.metric("Deuda total", data["total"]), surface.metric("Pagos mínimos", sum(row["minimum_payment"] for row in data["rows"])), surface.metric("Créditos activos", len(data["rows"]), "number")))
+        active_debts = [debt for debt in data["rows"] if debt["balance"] > 0]
+        surface.body.append(surface.row(surface.metric("Deuda total", sum(debt["balance"] for debt in active_debts)), surface.metric("Pagos mínimos", sum(debt["minimum_payment"] for debt in active_debts)), surface.metric("Créditos activos", len(active_debts), "number")))
         cards = []
         for debt in data["rows"]:
             if debt["balance"] <= 0:
@@ -88,7 +100,7 @@ async def render_plan(plan, tools, interpretation="local"):
             payment = min(500, debt["balance"])
             cards.append(surface.node("DebtCard", data=surface.bind(debt),
                 action={"event": {"name": "simulate_debt", "context": {"debt_id": debt["id"], "extra_payment": 500}}},
-                transactionalAction={"label": f"Confirmar abono único de {money(payment)} a {debt['name']}", "kind": "mutation",
+                transactionalAction={"label": "Confirmar abono", "kind": "mutation",
                     "event": {"name": "confirm_debt_payment", "context": {"debt_id": debt["id"], "extra_payment": payment}}}))
         surface.body.append(surface.row(*cards))
         message = f"Tu perfil tiene {money(data['total'])} de deuda. Selecciona un crédito para comparar el pago mínimo con un abono adicional de $500 mensuales."
@@ -98,9 +110,10 @@ async def render_plan(plan, tools, interpretation="local"):
         cards = []
         for item in data["plans"]:
             event = {"name": "select_plan", "context": {"plan_id": item["id"], "amount": plan.amount, "monthly_contribution": plan.monthly_contribution, "months": plan.months}}
+            confirm_event = {"name": "confirm_investment", "context": {"plan_id": item["id"], "amount": plan.amount}}
             cards.append(surface.node("PlanCard", data=surface.bind(item), amount=plan.amount,
                 action={"event": event},
-                transactionalAction={"label": f"Explorar {item['name']}", "kind": "simulation", "event": event}))
+                transactionalAction={"label": f"Invertir en {item['name']}", "kind": "mutation", "event": confirm_event}))
         surface.body += [surface.row(*cards), surface.text(data["assumption"])]
         message = f"Preparé tres escenarios educativos para un capital inicial de {money(plan.amount)}. Elige uno para explorar su proyección y ajustar las aportaciones."
     return response(surface, message, domain, tools, interpretation, period=month)
@@ -168,8 +181,12 @@ async def handle_action(action, tools):
         surface.body.append(surface.chart("Distribución del plan", [row["label"] for row in data["plan"]["allocation"]], [{"label": "%", "values": [row["value"] for row in data["plan"]["allocation"]]}], "doughnut"))
         surface.body.append(surface.text(data["assumption"]))
         surface.body.append(surface.button("Comparar otros planes", "compare_plans", {"amount": params.amount}))
+        simulator = next(node for node in surface.components if node["component"] == "Simulator")
+        simulator["transactionalAction"] = {"label": f"Confirmar Inversión de {money(params.amount)}", "kind": "mutation",
+            "event": {"name": "confirm_investment", "context": {"plan_id": params.plan_id, "amount": params.amount}}}
         message = f"Con {data['plan']['name']}, el escenario base a {params.months} meses resulta en {money(data['final_value'])}, de los cuales {money(data['contributed'])} son aportaciones. Es una simulación, no una promesa de rendimiento."
         return response(surface, message, "inversiones", tools, simulation=params)
+
     if action.name == "simulate_debt":
         params = DebtInput.model_validate(context)
         data = await tools.call(ACTION_TOOLS[action.name], **params.model_dump())
@@ -181,17 +198,27 @@ async def handle_action(action, tools):
         if 0 < params.extra_payment <= data["debt"]["balance"]:
             surface.body.append(surface.text(f"Puedes confirmar ahora un abono único de {money(params.extra_payment)} a {data['debt']['name']}. Descontará ese monto de tu cuenta y de tu deuda de demostración; no programa pagos mensuales."))
             chart = next(node for node in surface.components if node["component"] == "FinancialChart")
-            chart["transactionalAction"] = {"label": f"Confirmar abono único de {money(params.extra_payment)}", "kind": "mutation",
+            chart["transactionalAction"] = {"label": "Confirmar abono", "kind": "mutation",
                 "event": {"name": "confirm_debt_payment", "context": params.model_dump()}}
         return response(surface, f"En {data['debt']['name']}, añadir {money(params.extra_payment)} al mes reduce el plazo en {data['months_saved']} meses y los intereses en {money(data['interest_saved'])}.", "deudas", tools)
     if action.name == "confirm_debt_payment":
         params = PaymentInput.model_validate(context)
         result = await tools.call(ACTION_TOOLS[action.name], **params.model_dump())
-        surface = Surface()
-        surface.body.append(surface.text("Pago confirmado", "h2"))
-        surface.body.append(surface.row(surface.metric("Saldo disponible", result["balance_after"]), surface.metric("Deuda restante", result["debt_after"]["balance"])))
-        surface.body.append(surface.text(f"Abono único registrado en el perfil de demostración. Folio: {result['transaction_id']}"))
-        return response(surface, f"Pago confirmado de {money(params.extra_payment)}. Tu saldo disponible es {money(result['balance_after'])}.", "deudas", tools, transaction=result)
+        return confirmation_response(
+            result, "Pago confirmado",
+            f"Pago confirmado de {money(params.extra_payment)}. Tu saldo disponible es {money(result['balance_after'])}.",
+            "deudas", [("Saldo disponible", result["balance_after"]), ("Deuda restante", result["debt_after"]["balance"])], tools,
+        )
+    if action.name == "confirm_investment":
+        from app.schemas import InvestmentInput
+        params = InvestmentInput.model_validate(context)
+        result = await tools.call(ACTION_TOOLS[action.name], **params.model_dump())
+        return confirmation_response(
+            result, "Inversión confirmada",
+            f"Inversión confirmada por {money(params.amount)}. Tu saldo disponible es {money(result['balance_after'])}.",
+            "inversiones", [("Saldo disponible", result["balance_after"]), ("Monto invertido", params.amount)], tools,
+        )
+
     if action.name == "compare_plans":
         return await render_plan(QueryPlan(intent="inversiones", amount=context.get("amount", 10000)), tools)
     if action.name == "show_transactions":

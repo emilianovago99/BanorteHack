@@ -20,6 +20,10 @@
           "items": {
             "$ref": "#/$defs/__schema10"
           }
+        },
+        "variant": {
+          "type": "string",
+          "const": "confirmation"
         }
       },
       "required": [
@@ -124,7 +128,7 @@
           "$ref": "#/$defs/__schema13"
         },
         "value": {
-          "$ref": "#/$defs/__schema6"
+          "$ref": "#/$defs/__schema5"
         },
         "format": {
           "type": "string",
@@ -286,7 +290,32 @@
           "$ref": "#/$defs/__schema0"
         },
         "transactionalAction": {
-          "$ref": "#/$defs/__schema7"
+          "anyOf": [
+            {
+              "$ref": "#/$defs/__schema7"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "label": {
+                  "$ref": "#/$defs/__schema2"
+                },
+                "kind": {
+                  "type": "string",
+                  "const": "mutation"
+                },
+                "event": {
+                  "$ref": "#/$defs/__schema6"
+                }
+              },
+              "required": [
+                "label",
+                "kind",
+                "event"
+              ],
+              "additionalProperties": false
+            }
+          ]
         },
         "component": {
           "type": "string",
@@ -296,7 +325,7 @@
           "$ref": "#/$defs/__schema14"
         },
         "amount": {
-          "$ref": "#/$defs/__schema6"
+          "$ref": "#/$defs/__schema5"
         },
         "action": {
           "$ref": "#/$defs/__schema16"
@@ -317,7 +346,25 @@
           "$ref": "#/$defs/__schema0"
         },
         "transactionalAction": {
-          "$ref": "#/$defs/__schema2"
+          "type": "object",
+          "properties": {
+            "label": {
+              "$ref": "#/$defs/__schema2"
+            },
+            "kind": {
+              "type": "string",
+              "const": "mutation"
+            },
+            "event": {
+              "$ref": "#/$defs/__schema3"
+            }
+          },
+          "required": [
+            "label",
+            "kind",
+            "event"
+          ],
+          "additionalProperties": false
         },
         "component": {
           "type": "string",
@@ -436,7 +483,32 @@
     "__schema1": {
       "oneOf": [
         {
-          "$ref": "#/$defs/__schema2"
+          "type": "object",
+          "properties": {
+            "label": {
+              "$ref": "#/$defs/__schema2"
+            },
+            "kind": {
+              "type": "string",
+              "const": "mutation"
+            },
+            "event": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/__schema3"
+                },
+                {
+                  "$ref": "#/$defs/__schema6"
+                }
+              ]
+            }
+          },
+          "required": [
+            "label",
+            "kind",
+            "event"
+          ],
+          "additionalProperties": false
         },
         {
           "$ref": "#/$defs/__schema7"
@@ -444,32 +516,11 @@
       ]
     },
     "__schema2": {
-      "type": "object",
-      "properties": {
-        "label": {
-          "$ref": "#/$defs/__schema3"
-        },
-        "kind": {
-          "type": "string",
-          "const": "mutation"
-        },
-        "event": {
-          "$ref": "#/$defs/__schema4"
-        }
-      },
-      "required": [
-        "label",
-        "kind",
-        "event"
-      ],
-      "additionalProperties": false
-    },
-    "__schema3": {
       "type": "string",
       "minLength": 1,
       "maxLength": 200
     },
-    "__schema4": {
+    "__schema3": {
       "type": "object",
       "properties": {
         "name": {
@@ -480,14 +531,14 @@
           "type": "object",
           "properties": {
             "debt_id": {
-              "$ref": "#/$defs/__schema5"
+              "$ref": "#/$defs/__schema4"
             },
             "extra_payment": {
               "type": "number",
               "exclusiveMinimum": 0,
               "maximum": 100000,
               "multipleOf": 0.01,
-              "$ref": "#/$defs/__schema6"
+              "$ref": "#/$defs/__schema5"
             }
           },
           "required": [
@@ -503,22 +554,62 @@
       ],
       "additionalProperties": false
     },
-    "__schema5": {
+    "__schema4": {
       "type": "string",
       "enum": [
         "card-classic",
         "personal-loan",
-        "laptop"
+        "laptop",
+        "auto-loan"
       ]
     },
-    "__schema6": {
+    "__schema5": {
       "type": "number"
+    },
+    "__schema6": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "const": "confirm_investment"
+        },
+        "context": {
+          "type": "object",
+          "properties": {
+            "plan_id": {
+              "type": "string",
+              "enum": [
+                "conservative",
+                "balanced",
+                "growth"
+              ]
+            },
+            "amount": {
+              "default": 10000,
+              "type": "number",
+              "minimum": 100,
+              "maximum": 1000000,
+              "multipleOf": 0.01,
+              "$ref": "#/$defs/__schema5"
+            }
+          },
+          "required": [
+            "plan_id"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "name",
+        "context"
+      ],
+      "additionalProperties": false
     },
     "__schema7": {
       "type": "object",
       "properties": {
         "label": {
-          "$ref": "#/$defs/__schema3"
+          "$ref": "#/$defs/__schema2"
         },
         "kind": {
           "type": "string",
@@ -568,14 +659,14 @@
           "type": "number",
           "minimum": 100,
           "maximum": 1000000,
-          "$ref": "#/$defs/__schema6"
+          "$ref": "#/$defs/__schema5"
         },
         "monthly_contribution": {
           "default": 1000,
           "type": "number",
           "minimum": 0,
           "maximum": 100000,
-          "$ref": "#/$defs/__schema6"
+          "$ref": "#/$defs/__schema5"
         },
         "months": {
           "default": 24,
@@ -632,7 +723,10 @@
               "$ref": "#/$defs/__schema8"
             },
             {
-              "$ref": "#/$defs/__schema4"
+              "$ref": "#/$defs/__schema3"
+            },
+            {
+              "$ref": "#/$defs/__schema6"
             },
             {
               "type": "object",
@@ -662,14 +756,14 @@
                   "type": "object",
                   "properties": {
                     "debt_id": {
-                      "$ref": "#/$defs/__schema5"
+                      "$ref": "#/$defs/__schema4"
                     },
                     "extra_payment": {
                       "default": 500,
                       "type": "number",
                       "minimum": 0,
                       "maximum": 100000,
-                      "$ref": "#/$defs/__schema6"
+                      "$ref": "#/$defs/__schema5"
                     }
                   },
                   "required": [
@@ -699,7 +793,7 @@
                       "type": "number",
                       "minimum": 100,
                       "maximum": 1000000,
-                      "$ref": "#/$defs/__schema6"
+                      "$ref": "#/$defs/__schema5"
                     }
                   },
                   "additionalProperties": false
@@ -747,6 +841,25 @@
                       ]
                     }
                   },
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "name",
+                "context"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "const": "return_to_zero"
+                },
+                "context": {
+                  "type": "object",
+                  "properties": {},
                   "additionalProperties": false
                 }
               },

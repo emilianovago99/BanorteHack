@@ -44,8 +44,8 @@ def test_chat_domains(client, message, domain):
 
 
 @pytest.mark.parametrize("message,expected", [
-    ("¿Quién ganó el partido de ayer?", "No puedo resolver esa consulta"),
-    ("Hola", "No puedo resolver esa consulta"),
+    ("¿Quién ganó el partido de ayer?", "No puedo procesar esa solicitud"),
+    ("Hola", "No puedo procesar esa solicitud"),
 ])
 def test_non_financial_or_unintelligible_messages_use_mcp_help(client, monkeypatch, message, expected):
     monkeypatch.setenv("AI_MODE", "local")
@@ -163,7 +163,7 @@ def test_cards_require_contextual_actions_and_customization_preserves_them(clien
     monkeypatch.setenv("AI_MODE", "local")
     for message, component, event, kind in [
         ("Deudas", "DebtCard", "confirm_debt_payment", "mutation"),
-        ("Quiero invertir", "PlanCard", "select_plan", "simulation"),
+        ("Quiero invertir", "PlanCard", "confirm_investment", "mutation"),
     ]:
         body = client.post("/chat", json={"message": message}).json()
         nodes = body["a2ui"][2]["updateComponents"]["components"]

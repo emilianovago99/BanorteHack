@@ -35,8 +35,8 @@ function Workspace() {
       const next: ChatResponse = await res.json();
       if (!Array.isArray(next.a2ui)) throw new Error('No se pudo generar la vista. Intenta otra consulta.');
       history.current = [...history.current, { role: 'user', content: text.slice(0, 2000) }, { role: 'assistant', content: next.message.slice(0, 2000) }].slice(-6) as typeof history.current;
-      if (next.transaction?.confirmed) { setView(undefined); setNotice(next.message); await load(); }
-      else setView(next);
+      if (next.transaction?.confirmed) setAccount(previous => previous ? { ...previous, balance: next.transaction!.balance_after } : previous);
+      setView(next);
       setPrompt('');
       scroll.current?.scrollTo({ y: 0, animated: true });
     } catch (e) { setError(e instanceof Error ? e.message : 'No se pudo completar la consulta.'); }
@@ -49,7 +49,7 @@ function Workspace() {
       {!!notice && <Panel><Text accessibilityLiveRegion="polite" style={ui.body}>{notice}</Text></Panel>}
       {!!error && <Panel><Text accessibilityRole="alert" style={ui.error}>{error}</Text>{!account && <ActionButton title="Reintentar conexión" secondary onPress={() => void load()} />}</Panel>}
       {busy && <View style={ui.row}><ActivityIndicator color={theme.accent} /><Text style={ui.body}>Preparando tu vista…</Text></View>}
-      {view && <><View style={ui.row}><Text style={[ui.eyebrow, { color: theme.accent }]}>{view.domain.toUpperCase()}</Text><ActionButton title="Volver al inicio" secondary disabled={busy} onPress={() => setView(undefined)} /></View><Text accessibilityLiveRegion="polite" style={ui.body}>{view.message}</Text>{voiceEnabled && <SpeechPlayer key={view.message} text={view.message} />}<A2UIRenderer messages={view.a2ui} onAction={action => void query('Explorar escenario', action)} busy={busy} onRecover={() => setView(undefined)} /></>}
+      {view && <><View style={ui.row}><Text style={[ui.eyebrow, { color: theme.accent }]}>{view.domain.toUpperCase()}</Text><ActionButton title="Volver al inicio" secondary disabled={busy} onPress={() => setView(undefined)} /></View><Text accessibilityLiveRegion="polite" style={ui.body}>{view.message}</Text>{voiceEnabled && <SpeechPlayer key={view.message} text={view.message} />}<A2UIRenderer messages={view.a2ui} onAction={action => { if (action.action.name === 'return_to_zero') { if (!inFlight.current) { setView(undefined); setPrompt(''); setNotice(''); } } else void query('Explorar escenario', action); }} busy={busy} onRecover={() => setView(undefined)} /></>}
     </ScrollView>
     <View style={{ padding: 16, gap: 10, backgroundColor: '#fff', borderTopWidth: 1, borderColor: '#e5ebe8' }}>
       <View style={ui.row}><TextInput accessibilityLabel="Pregunta sobre tus finanzas" style={[ui.input, { flex: 1, maxHeight: 120 }]} value={prompt} onChangeText={setPrompt} multiline maxLength={2000} placeholder="¿Qué quieres hacer con tu dinero?" editable={!busy} /><ActionButton title="Enviar" onPress={() => void query(prompt)} disabled={busy || !prompt.trim()} /></View>

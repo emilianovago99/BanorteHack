@@ -168,7 +168,7 @@ class FinancialRepository:
             raise ValueError("Crédito desconocido.")
         now = time.time()
         for payment in reversed(self.payments):
-            if payment["debt_id"] == debt_id and payment["row"]["amount_cents"] == cents and 0 <= now - payment["created_at"] < 30:
+            if payment.get("debt_id") == debt_id and payment["row"]["amount_cents"] == cents and 0 <= now - payment["created_at"] < 30:
                 return {**payment["result"], "balance_after": self.overview()["balance"],
                         "debt_after": {"debt_id": debt_id, "balance": debt["balance"]}}
         debt_cents = int(Decimal(str(debt["balance"])) * 100)
@@ -214,6 +214,64 @@ class FinancialRepository:
             except OSError:
                 pass
             raise ValueError("No se pudo guardar el pago. Verifica el almacenamiento e intenta de nuevo.") from None
+        self.payments = payments
+        return deepcopy(result)
+
+    @synchronized
+    def apply_investment(self, plan_id, amount):
+        try:
+            amount_val = Decimal(str(amount))
+        except (InvalidOperation, ValueError):
+            raise ValueError("Monto inválido.")
+        if not amount_val.is_finite() or not 0 < amount_val <= 1000000 or amount_val * 100 != (amount_val * 100).to_integral_value():
+            raise ValueError("El monto debe ser positivo y máximo $1,000,000.")
+        if amount_val > Decimal(str(self.overview()["balance"])):
+            raise ValueError("Saldo disponible insuficiente.")
+        cents = int(amount_val * 100)
+        plan_names = {"conservative": "Plan Conservador", "balanced": "Plan Equilibrado", "growth": "Plan Crecimiento"}
+        if plan_id not in plan_names:
+            raise ValueError("Plan desconocido.")
+        now = time.time()
+        for payment in reversed(self.payments):
+            if payment.get("plan_id") == plan_id and payment["row"]["amount_cents"] == cents and 0 <= now - payment["created_at"] < 30:
+                return {**payment["result"], "balance_after": self.overview()["balance"]}
+        month = self.month()
+        year, month_number = map(int, month.split("-"))
+        transaction_id = "txn-" + uuid4().hex
+        row = {"id": transaction_id, "date": f"{month}-{calendar.monthrange(year, month_number)[1]:02}",
+               "kind": "expense", "amount_cents": cents, "merchant": plan_names[plan_id],
+               "category": "Inversiones", "account_id": self.profile["accounts"][0]["id"],
+               "city": "Monterrey", "method": "SPEI", "recurring": 0,
+               "description": f"Inversión confirmada · {plan_id}"}
+        previous_profile = self.profile
+        previous_state = {"profile": previous_profile, "payments": self.payments}
+        updated_profile = deepcopy(previous_profile)
+        investment_entry = next((item for item in updated_profile["investments"] if item.get("id") == plan_id), None)
+        if investment_entry:
+            investment_entry["value"] += float(amount_val)
+        else:
+            updated_profile["investments"].append({"id": plan_id, "name": plan_names[plan_id], "value": float(amount_val)})
+        updated_profile["transaction_count"] += 1
+        try:
+            if not self.payments_path.exists():
+                self._atomic_write(self.payments_path, previous_state)
+            with self.db:
+                self._insert_transaction(row)
+                self.profile = updated_profile
+                result = {"transaction_id": transaction_id, "confirmed": True,
+                          "balance_after": self.overview()["balance"]}
+                payments = [*self.payments, {"plan_id": plan_id, "created_at": now, "row": row, "result": result}]
+                self._atomic_write(self.profile_path, updated_profile)
+                self._atomic_write(self.payments_path, {"profile": updated_profile, "payments": payments})
+        except (OSError, sqlite3.Error):
+            self.profile = previous_profile
+            try:
+                if self.payments_path.exists():
+                    self._atomic_write(self.payments_path, previous_state)
+                self._atomic_write(self.profile_path, previous_profile)
+            except OSError:
+                pass
+            raise ValueError("No se pudo guardar la inversión.") from None
         self.payments = payments
         return deepcopy(result)
 

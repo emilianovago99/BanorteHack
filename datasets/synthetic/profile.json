@@ -43,7 +43,7 @@
     {
       "id": "personal-loan",
       "name": "Crédito personal",
-      "balance": 46500.0,
+      "balance": 48000,
       "annual_rate": 0.22,
       "minimum_payment": 2100,
       "due_day": 5,
@@ -52,11 +52,20 @@
     {
       "id": "laptop",
       "name": "Laptop · meses sin intereses",
-      "balance": 7900.0,
+      "balance": 8400,
       "annual_rate": 0,
       "minimum_payment": 1400,
       "due_day": 18,
       "credit_limit": 16800
+    },
+    {
+      "id": "auto-loan",
+      "name": "Crédito Automotriz",
+      "balance": 50000.0,
+      "annual_rate": 0.145,
+      "minimum_payment": 3500,
+      "due_day": 12,
+      "credit_limit": 180000
     }
   ],
   "investments": [
@@ -69,6 +78,16 @@
       "name": "Portafolio diversificado demo",
       "value": 46000,
       "principal": 42000
+    },
+    {
+      "id": "balanced",
+      "name": "Plan Equilibrado",
+      "value": 20000.010000000002
+    },
+    {
+      "id": "conservative",
+      "name": "Plan Conservador",
+      "value": 10000.0
     }
   ],
   "goals": [
