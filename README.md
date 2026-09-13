@@ -1,6 +1,6 @@
 # BanorteHack
 
-Asistente financiero con 11,602 movimientos sintéticos, herramientas MCP y una interfaz web que cambia con cada pregunta mediante A2UI. Incluye login con Auth0 y voz con ElevenLabs. Consulta gastos por comercio, origen de ingresos, presupuestos, suscripciones y créditos; elige planes de inversión y ajusta sus proyecciones. Todo utiliza un perfil ficticio compartido y no ejecuta movimientos de dinero. Ver [arquitectura actual](docs/architecture.md).
+Asistente financiero con 11,602 movimientos sintéticos, herramientas MCP y una interfaz web que cambia con cada pregunta mediante A2UI. Incluye login con Auth0 y voz con ElevenLabs. Consulta gastos por comercio, origen de ingresos, presupuestos, suscripciones y créditos; elige planes de inversión y ajusta sus proyecciones. Todo utiliza un perfil ficticio compartido: `confirm_debt_payment` sólo muta ese dataset demo y no ejecuta movimientos bancarios reales. Ver [arquitectura actual](docs/architecture.md).
 
 ```text
 apps/
@@ -69,6 +69,8 @@ Las acciones generan nuevas superficies con estadísticas y gráficas. Puedes mo
 
 ## Móvil
 
+Android incluye login con Auth0 y el catálogo A2UI nativo: gráficas, tarjetas, presupuestos y simuladores. Para un teléfono conectado por USB ejecuta `./scripts/android-usb.ps1`. Consulta [la guía de Android](docs/mobile.md) para compilar, instalar y conectar los servicios.
+
 ```powershell
 Copy-Item apps/mobile/.env.example apps/mobile/.env
 npm run dev:mobile
@@ -97,7 +99,7 @@ FastAPI inicia automáticamente su cliente y servidor MCP stdio. Para inspeccion
 .\.venv\Scripts\python -m app.mcp.server
 ```
 
-El servidor expone 13 herramientas de consulta, presupuestos, créditos y proyecciones. Los conectores PostgreSQL/MongoDB y las operaciones con Solana siguen pendientes; las consultas actuales usan SQLite en memoria sobre el CSV incluido. Docker monta ese dataset como solo lectura.
+El servidor expone 14 herramientas de consulta, presupuestos, créditos, proyecciones y aclaraciones (`report_query_issue`). Los conectores PostgreSQL/MongoDB y las operaciones con Solana siguen pendientes; las consultas actuales usan SQLite en memoria sobre el CSV incluido. Docker monta ese dataset como solo lectura.
 
 ## Verificación
 

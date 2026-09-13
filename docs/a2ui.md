@@ -42,4 +42,6 @@ La simulación activa viaja en el siguiente mensaje del chat, de modo que “¿y
 
 El renderer valida mensajes con Zod, limita componentes, comprueba referencias y ciclos, rechaza componentes desconocidos y muestra recuperación ante errores de renderizado. Las claves de Gemini, Auth0 y ElevenLabs permanecen en el servidor.
 
-El renderer completo de este catálogo está en la web. La aplicación nativa conserva su cliente de chat y representación resumida de `visualization`; no implementa todavía el catálogo interactivo completo. La web se adapta también a pantallas de teléfono.
+Web y Android renderizan el catálogo financiero completo. El validador de protocolo se comparte; React Native usa vistas nativas y SVG, mientras la web usa React y Chart.js. Los dos clientes envían las mismas acciones al gateway, conservan el contexto de la simulación y cambian la paleta según el dominio. Ver [ejecución en Android](mobile.md).
+
+Las preguntas ilegibles, fuera de alcance, sin datos o con problemas del proveedor invocan `report_query_issue` en MCP. Su resultado genera una vista de aclaración. `AI_MODE=gemini` exige interpretación real del modelo; el error de cuota se comunica explícitamente. Las modificaciones de presentación también pasan por Gemini en ese modo.

@@ -3,9 +3,18 @@ from fastapi.testclient import TestClient
 from app.main import app
 
 @pytest.fixture(scope="module")
-def client():
-    with TestClient(app) as test_client:
-        yield test_client
+def client(tmp_path_factory):
+    import shutil
+    from pathlib import Path
+    dataset = tmp_path_factory.mktemp("chat-dataset")
+    source = Path(__file__).resolve().parents[3] / "datasets/synthetic"
+    for name in ("profile.json", "transactions.csv"):
+        shutil.copyfile(source / name, dataset / name)
+    with pytest.MonkeyPatch.context() as env:
+        env.setenv("FINANCIAL_DATA_DIR", str(dataset))
+        env.setenv("AI_MODE", "local")
+        with TestClient(app) as test_client:
+            yield test_client
 
 
 @pytest.mark.parametrize("message", ["Resumen", "Ingresos", "Gastos", "Presupuestos", "Suscripciones", "Deudas", "Movimientos", "Quiero invertir"])
@@ -32,6 +41,20 @@ def test_chat_domains(client, message, domain):
     assert len(body["visualization"]["labels"]) == len(body["visualization"]["values"])
     assert body["a2ui"][0]["version"] == "v0.9"
     assert body["tools_used"]
+
+
+@pytest.mark.parametrize("message,expected", [
+    ("¿Quién ganó el partido de ayer?", "No puedo resolver esa consulta"),
+    ("Hola", "No puedo resolver esa consulta"),
+    ("asdfgh", "No entendí"),
+])
+def test_non_financial_or_unintelligible_messages_use_mcp_help(client, monkeypatch, message, expected):
+    monkeypatch.setenv("AI_MODE", "local")
+    result = client.post("/chat", json={"message": message})
+    assert result.status_code == 200
+    body = result.json()
+    assert expected in body["message"]
+    assert body["tools_used"] == ["report_query_issue"]
 
 
 @pytest.mark.parametrize("message", ["", "   ", "x" * 2001])
@@ -87,40 +110,28 @@ def test_customize_active_surface_through_mcp(client, monkeypatch):
     assert copy["workspace_operation"] == "create"
 def test_confirm_debt_payment_alters_overview(client, monkeypatch):
     monkeypatch.setenv("AI_MODE", "local")
-    import sys
-    import subprocess
-    from pathlib import Path
-    
-    ROOT = Path(__file__).resolve().parents[3]
-    
-    try:
-        overview_before = client.get("/account").json()
-        balance_before = overview_before["balance"]
-        
-        result = client.post("/actions", json={
-            "version": "v0.9",
-            "action": {
-                "name": "confirm_debt_payment",
-                "surfaceId": "test",
-                "sourceComponentId": "test",
-                "timestamp": "",
-                "context": {"debt_id": "laptop", "extra_payment": 100}
-            }
-        })
-        
-        assert result.status_code == 200
-        data = result.json()
-        print("BALANCE BEFORE:", balance_before)
-        print("TRANSACTION RESPONSE:", data["transaction"])
-        assert data["transaction"]["confirmed"] is True
-        assert data["transaction"]["balance_after"] < balance_before
-        
-        overview_after = client.get("/account").json()
-        print("OVERVIEW AFTER:", overview_after["balance"])
-        assert overview_after["balance"] < balance_before
-        assert overview_after["balance"] == data["transaction"]["balance_after"]
-    finally:
-        subprocess.run([sys.executable, "-m", "app.data.generate"], cwd=ROOT / "services" / "ai")
-        payments_path = ROOT / "datasets" / "synthetic" / "payments.json"
-        if payments_path.exists():
-            payments_path.unlink()
+    before = client.get("/account").json()["balance"]
+    result = client.post("/actions", json={"action": {
+        "name": "confirm_debt_payment", "surfaceId": "test", "sourceComponentId": "test", "timestamp": "",
+        "context": {"debt_id": "laptop", "extra_payment": 100}
+    }})
+    assert result.status_code == 200
+    transaction = result.json()["transaction"]
+    assert transaction["confirmed"] is True
+    assert transaction["balance_after"] == pytest.approx(before - 100)
+    assert client.get("/account").json()["balance"] == transaction["balance_after"]
+
+
+def test_missing_data_uses_help_tool(client):
+    result = client.post("/chat", json={"message": "Gastos de enero de 2030"}).json()
+    assert "report_query_issue" in result["tools_used"]
+    assert "No encontré datos" in result["message"]
+
+
+def test_strict_gemini_failure_does_not_invent_answer(client, monkeypatch):
+    monkeypatch.setenv("AI_MODE", "gemini")
+    monkeypatch.setenv("GEMINI_API_KEY", "")
+    result = client.post("/chat", json={"message": "Mis ingresos"}).json()
+    assert result["interpretation"] == "unavailable"
+    assert result["tools_used"] == ["report_query_issue"]
+    assert "No pude conseguir" in result["message"]

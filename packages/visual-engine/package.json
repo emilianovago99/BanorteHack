@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "exports": { ".": "./src/index.tsx" },
+  "exports": { ".": "./src/index.tsx", "./protocol": "./src/protocol.ts" },
   "scripts": { "typecheck": "tsc --noEmit" },
   "dependencies": {
     "@banortehack/contracts": "0.1.0",

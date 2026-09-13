@@ -26,7 +26,7 @@ export interface ChatResponse {
   transaction?: TransactionResult | null;
   workspace_operation?: 'create' | 'update';
   tools_used: string[];
-  interpretation: 'gemini' | 'local';
+  interpretation: 'gemini' | 'local' | 'unavailable';
   source: string;
   period?: string | null;
   simulation?: { plan_id: 'conservative' | 'balanced' | 'growth'; amount: number; months: number; monthly_contribution: number } | null;

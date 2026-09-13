@@ -99,7 +99,7 @@ export function FinancialWorkspace() {
   }
   function send(event: FormEvent) { event.preventDefault(); void query(prompt); }
 
-  return <div className={`lazy-workspace lazy-${viewMode}`} data-view-mode={viewMode}>
+  return <div className={`lazy-workspace lazy-${viewMode}`} data-view-mode={viewMode} data-domain={view?.domain ?? 'resumen'}>
     <main className="lazy-canvas">
       {viewMode === 'zero' && <section className="zero-state" aria-label="Estado Cero">
         <div className="zero-balance">
@@ -110,6 +110,7 @@ export function FinancialWorkspace() {
       </section>}
       {viewMode === 'loading' && <div className="lazy-loading" role="status"><span className="loading-dot" />Preparando tu vista…</div>}
       {viewMode === 'surface' && view && <section className="surface-canvas" aria-label="Vista financiera" ref={surfaceRef} tabIndex={-1}>
+        <div className="surface-heading"><button className="secondary" onClick={() => resetToZero()} disabled={busy}>Volver al inicio</button><button className="logout-button" aria-label="Cerrar sesión" onClick={logout}><Icon name="logout" /></button></div>
         <A2UIRenderer messages={view.a2ui} onAction={onAction} busy={busy} onRecover={resetToZero} />
       </section>}
       {error && <div className="error-banner query-error" role="alert"><p>{error}</p></div>}
@@ -120,6 +121,6 @@ export function FinancialWorkspace() {
       <textarea ref={inputRef} id="financial-message" placeholder="¿Qué quieres hacer con tu dinero?" value={prompt} onChange={event => setPrompt(event.target.value)} maxLength={2000} rows={1} disabled={busy} onKeyDown={event => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); if (!busy) void query(prompt); } }} />
       <button className="send-button" disabled={busy || !prompt.trim()} aria-label="Enviar mensaje"><Icon name="send" /></button>
     </form>
-
+    {viewMode === 'zero' && <div className="zero-chips" aria-label="Ejemplos para empezar">{['Revisar deudas', 'Analizar gastos', 'Explorar inversiones'].map(text => <button key={text} type="button" disabled={busy} onClick={() => void query(text)}>{text}</button>)}</div>}
   </div>;
 }

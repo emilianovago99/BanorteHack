@@ -1,11 +1,12 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
-import { Button, Text, View } from 'react-native';
+import { LoginScreen } from './ui';
 import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
 import type { PublicConfig } from '@banortehack/contracts';
 
 WebBrowser.maybeCompleteAuthSession();
 const api = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3001';
+class LoginFailure extends Error {}
 
 interface Session {
   request: (path: string, init?: RequestInit) => Promise<Response>;
@@ -27,13 +28,20 @@ async function checkResponse(response: Response) {
   }
   return response;
 }
-const demoRequest: Session['request'] = async (path, init) => checkResponse(await fetch(`${api}${path}`, init));
-function Status({ children }: { children: ReactNode }) {
-  return <View style={{ padding: 24, paddingTop: 80, gap: 20 }}><Text style={{ fontSize: 28 }}>BanorteHack</Text>{children}</View>;
+async function fetchAPI(path: string, init?: RequestInit) {
+  const controller = new AbortController();
+  const abort = () => controller.abort();
+  const timer = setTimeout(abort, 40000);
+  init?.signal?.addEventListener('abort', abort);
+  if (init?.signal?.aborted) controller.abort();
+  try { return await fetch(`${api}${path}`, { ...init, signal: controller.signal }); }
+  catch { throw new Error(controller.signal.aborted ? 'La consulta tardó demasiado. Puedes intentar de nuevo.' : 'No se pudo conectar al servicio. Comprueba la conexión USB o la red.'); }
+  finally { clearTimeout(timer); init?.signal?.removeEventListener('abort', abort); }
 }
+const demoRequest: Session['request'] = async (path, init) => checkResponse(await fetchAPI(path, init));
 
 function AuthenticatedSession({ config, children }: { config: PublicConfig; children: ReactNode }) {
-  const redirectUri = AuthSession.makeRedirectUri({ scheme: 'banortehack', path: 'auth/callback' });
+  const redirectUri = AuthSession.makeRedirectUri({ native: 'banortehack://auth/callback', scheme: 'banortehack', path: 'auth/callback' });
   const [token, setToken] = useState<{ value: string; expiresAt: number }>();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -47,6 +55,7 @@ function AuthenticatedSession({ config, children }: { config: PublicConfig; chil
     if (busy) return;
     setBusy(true);
     setError('');
+    let step = 'discovery';
     try {
       const discovery = await AuthSession.fetchDiscoveryAsync(config.auth.issuer);
       // Cada intento recibe un state y un verificador PKCE nuevos.
@@ -55,16 +64,25 @@ function AuthenticatedSession({ config, children }: { config: PublicConfig; chil
         scopes: ['openid', 'profile', 'email'], usePKCE: true,
         extraParams: { audience: config.auth.audience, prompt: 'login' }
       });
+      step = 'browser';
       const result = await authRequest.promptAsync(discovery);
       if (result.type === 'cancel' || result.type === 'dismiss') return;
-      if (result.type !== 'success' || !authRequest.codeVerifier) throw new Error();
+      if (result.type === 'error') {
+        const code = result.params?.error;
+        throw new LoginFailure(code === 'access_denied' || code === 'unauthorized_client' ? 'Auth0 rechazó el acceso. Revisa que la aplicación Native tenga acceso a la API y el callback autorizado.' : 'Auth0 no pudo completar el acceso. Revisa el callback de la aplicación Native.');
+      }
+      if (result.type !== 'success' || !authRequest.codeVerifier) throw new LoginFailure('El navegador no devolvió una autorización válida. Intenta de nuevo.');
+      step = 'exchange';
       const response = await AuthSession.exchangeCodeAsync({
         clientId: config.auth.mobileClientId, code: result.params.code, redirectUri,
         extraParams: { code_verifier: authRequest.codeVerifier }
       }, discovery);
       if (!response.accessToken || !response.expiresIn || response.expiresIn <= 0) throw new Error();
       setToken({ value: response.accessToken, expiresAt: Date.now() + response.expiresIn * 1000 });
-    } catch { setError('No se pudo iniciar sesión. Intenta de nuevo.'); }
+    } catch (failure) {
+      console.warn('Auth0 mobile:', step, failure instanceof Error ? failure.name : 'Error');
+      setError(failure instanceof LoginFailure ? failure.message : step === 'discovery' ? 'No se pudo conectar con Auth0. Comprueba que el teléfono tenga acceso a Internet.' : step === 'exchange' ? 'No se pudo completar el intercambio de sesión con Auth0. Revisa la configuración del cliente Native.' : 'No se pudo abrir el acceso seguro. Intenta de nuevo.');
+    }
     finally { setBusy(false); }
   }
 
@@ -72,7 +90,7 @@ function AuthenticatedSession({ config, children }: { config: PublicConfig; chil
     if (!token || token.expiresAt <= Date.now()) { setToken(undefined); throw new Error('Inicia sesión de nuevo.'); }
     const headers = new Headers(init?.headers);
     headers.set('Authorization', `Bearer ${token.value}`);
-    const response = await fetch(`${api}${path}`, { ...init, headers });
+    const response = await fetchAPI(path, { ...init, headers });
     if (response.status === 401) setToken(undefined);
     return checkResponse(response);
   }, [token]);
@@ -89,11 +107,7 @@ function AuthenticatedSession({ config, children }: { config: PublicConfig; chil
     finally { setBusy(false); }
   }
 
-  if (!token) return <Status>
-    <Text>Inicia sesión para conversar sobre tus finanzas.</Text>
-    <Button title={busy ? 'Conectando…' : 'Iniciar sesión'} onPress={login} disabled={busy} />
-    {Boolean(error) && <Text accessibilityRole="alert">{error}</Text>}
-  </Status>;
+  if (!token) return <LoginScreen busy={busy} error={error} onLogin={() => void login()} />;
   return <Context.Provider value={{ request, logout: () => { void logout(); }, voiceEnabled: config.voice.enabled, demo: false }}>{children}</Context.Provider>;
 }
 
@@ -101,16 +115,19 @@ export function MobileSessionProvider({ children }: { children: ReactNode }) {
   const [config, setConfig] = useState<PublicConfig>();
   const [failed, setFailed] = useState(false);
   const [attempt, setAttempt] = useState(0);
+  const [demoEntered, setDemoEntered] = useState(false);
   useEffect(() => {
     const controller = new AbortController();
+    const timer = setTimeout(() => { controller.abort(); setFailed(true); }, 10000);
     setFailed(false);
     fetch(`${api}/api/config`, { signal: controller.signal }).then(checkResponse).then(response => response.json()).then(setConfig)
-      .catch(() => { if (!controller.signal.aborted) setFailed(true); });
-    return () => controller.abort();
+      .catch(() => { if (!controller.signal.aborted) setFailed(true); }).finally(() => clearTimeout(timer));
+    return () => { clearTimeout(timer); controller.abort(); };
   }, [attempt]);
-  if (failed) return <Status><Text>No se pudo conectar al servicio.</Text><Button title="Reintentar" onPress={() => setAttempt(value => value + 1)} /></Status>;
-  if (!config) return <Status><Text>Conectando…</Text></Status>;
-  if (config.auth.mode === 'demo') return <Context.Provider value={{ request: demoRequest, logout: () => {}, voiceEnabled: false, demo: true }}>{children}</Context.Provider>;
-  if (!config.auth.mobileClientId) return <Status><Text>El inicio de sesión aún no está configurado.</Text></Status>;
+  if (failed) return <LoginScreen error="No se pudo conectar al servicio. Comprueba la conexión con tu computadora." onLogin={() => setAttempt(value => value + 1)} />;
+  if (!config) return <LoginScreen busy message="Conectando con tu espacio financiero…" />;
+  if (config.auth.mode === 'demo' && !demoEntered) return <LoginScreen demo onLogin={() => setDemoEntered(true)} />;
+  if (config.auth.mode === 'demo') return <Context.Provider value={{ request: demoRequest, logout: () => setDemoEntered(false), voiceEnabled: false, demo: true }}>{children}</Context.Provider>;
+  if (!config.auth.mobileClientId) return <LoginScreen error="El inicio de sesión aún no está configurado." />;
   return <AuthenticatedSession config={config}>{children}</AuthenticatedSession>;
 }

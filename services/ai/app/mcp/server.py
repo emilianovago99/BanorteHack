@@ -88,5 +88,18 @@ def customize_financial_view(messages: list[dict], order: Literal["asc", "desc"]
     return customize_surface(messages, order, color, chart_type, sort_key, target)
 
 
+@mcp.tool()
+def report_query_issue(reason: Literal["not_understood", "out_of_scope", "no_data", "unavailable", "quota"]) -> dict:
+    """Devuelve una aclaración y ejemplos cuando no se entiende la consulta o no se puede obtener información. No inventa datos."""
+    messages = {
+        "not_understood": "No entendí lo que necesitas. Puedes preguntar por tus ingresos, gastos, deudas o inversiones.",
+        "out_of_scope": "No puedo resolver esa consulta con este perfil financiero. Puedo ayudarte a revisar tus finanzas del dataset.",
+        "no_data": "No encontré datos para esa consulta. El dataset cubre enero de 2024 a agosto de 2026; prueba otro periodo o comercio.",
+        "unavailable": "No pude conseguir la información en este momento. Intenta de nuevo en unos instantes.",
+        "quota": "Gemini alcanzó el límite de solicitudes de este proyecto. No pude interpretar tu consulta con IA. Intenta cuando se restablezca la cuota."
+    }
+    return {"reason": reason, "message": messages[reason], "suggestions": ["Revisar deudas", "Analizar gastos de agosto de 2026", "Explorar inversiones"]}
+
+
 if __name__ == "__main__":
     mcp.run(transport="stdio")

@@ -3,6 +3,7 @@ from typing import Literal
 from pydantic import BaseModel, Field, ConfigDict
 
 FinancialDomain = Literal["resumen", "deudas", "ingresos", "gastos", "inversiones", "presupuestos", "movimientos", "suscripciones"]
+PlanIntent = Literal["resumen", "deudas", "ingresos", "gastos", "inversiones", "presupuestos", "movimientos", "suscripciones", "fuera_tema", "incomprensible", "sin_datos", "no_disponible", "cuota_agotada", "personalizar"]
 
 
 class ChatTurn(BaseModel):
@@ -19,12 +20,17 @@ class ChatRequest(BaseModel):
 
 
 class QueryPlan(BaseModel):
-    intent: FinancialDomain = "resumen"
+    intent: PlanIntent = "resumen"
     month: str | None = Field(default=None, pattern=r"^20\d{2}-(0[1-9]|1[0-2])$")
     merchant: str | None = Field(default=None, max_length=100)
     category: str | None = Field(default=None, max_length=60)
     group_by: Literal["category", "merchant"] = "category"
     plan_id: Literal["conservative", "balanced", "growth"] | None = None
+    view_order: Literal["asc", "desc"] | None = None
+    view_color: str | None = Field(default=None, pattern=r"^(azul|verde|rojo|morado|naranja|#[0-9a-fA-F]{6})$")
+    view_chart_type: Literal["bar", "line", "doughnut"] | None = None
+    view_sort_key: Literal["date", "amount", "label", "merchant", "category"] | None = None
+    view_target: str | None = Field(default=None, max_length=100)
     amount: float = Field(default=10000, ge=100, le=1000000)
     months: int = Field(default=24, ge=1, le=120)
     monthly_contribution: float = Field(default=1000, ge=0, le=100000)
@@ -54,7 +60,7 @@ class ChatResponse(BaseModel):
     transaction: TransactionResult | None = None
     workspace_operation: Literal["create", "update"] = "create"
     tools_used: list[str] = Field(default_factory=list)
-    interpretation: Literal["gemini", "local"] = "local"
+    interpretation: Literal["gemini", "local", "unavailable"] = "local"
     source: str = "Dataset sintético · 2024–2026"
     period: str | None = None
     simulation: SimulationInput | None = None

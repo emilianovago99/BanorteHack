@@ -4,6 +4,11 @@ from app.planner import plan_query
 
 
 def response(surface, message, domain, tools, interpretation="local", period=None, simulation=None, transaction=None):
+    palette = {"deudas": ["#c2410c", "#dc2626", "#f59e0b"], "ingresos": ["#15803d", "#0d9488", "#65a30d"], "inversiones": ["#2563eb", "#0891b2", "#6366f1", "#64748b"]}.get(domain)
+    if palette:
+        for node in surface.components:
+            if node["component"] == "FinancialChart":
+                node.setdefault("palette", palette)
     # Compatibilidad con el cliente móvil anterior mientras se renderiza A2UI.
     chart = next((item for item in surface.components if item["component"] == "FinancialChart"), None)
     data = surface.model[chart["data"]["path"].lstrip("/")] if chart else {"labels": [], "series": [{"values": []}]}
@@ -13,8 +18,12 @@ def response(surface, message, domain, tools, interpretation="local", period=Non
 async def render_plan(plan, tools, interpretation="local"):
     surface = Surface()
     domain, month = plan.intent, plan.month
+    if domain in ("fuera_tema", "incomprensible", "sin_datos", "no_disponible", "cuota_agotada"):
+        return await query_issue(tools, {"fuera_tema": "out_of_scope", "incomprensible": "not_understood", "sin_datos": "no_data", "no_disponible": "unavailable", "cuota_agotada": "quota"}[domain], interpretation)
     overview = await tools.call("get_account_overview", month=month)
     month = overview["month"]
+    if domain in ("resumen", "gastos", "ingresos", "movimientos", "presupuestos", "suscripciones") and not overview["dataset"]["start_date"][:7] <= month <= overview["dataset"]["end_date"][:7]:
+        return await query_issue(tools, "no_data", interpretation)
     if domain == "resumen":
         flow = await tools.call("get_cashflow", months=6, end_month=month)
         recent = await tools.call("search_transactions", month=month, limit=8)
@@ -29,6 +38,8 @@ async def render_plan(plan, tools, interpretation="local"):
         breakdown = await tools.call("get_income_sources" if kind == "income" else "get_spending_breakdown", month=month, **({"group_by": plan.group_by} if kind == "expense" else {}))
         flow = await tools.call("get_cashflow", months=6, end_month=month)
         rows = breakdown["rows"]
+        if not rows:
+            return await query_issue(tools, "no_data", interpretation)
         label = "Origen de tus ingresos" if kind == "income" else "¿A dónde se fue tu dinero?"
         dimension = "Origen" if kind == "income" else "Comercio" if plan.group_by == "merchant" else "Categoría"
         surface.body.append(surface.row(surface.metric("Ingresos" if kind == "income" else "Gastos", breakdown["total"]), surface.metric("Fuentes" if kind == "income" else "Comercios" if plan.group_by == "merchant" else "Categorías", len(rows), "number"), surface.metric("Ahorro del mes", overview["savings_rate"], "percent")))
@@ -39,6 +50,8 @@ async def render_plan(plan, tools, interpretation="local"):
         message = f"En {month}, tus {domain} suman {money(breakdown['total'])}. " + (f"El mayor {'origen' if kind == 'income' else 'destino'} es {rows[0]['label']} con {money(rows[0]['amount'])}." if rows else "No hay movimientos para este periodo.")
     elif domain == "movimientos":
         data = await tools.call("search_transactions", month=month, merchant=plan.merchant, category=plan.category, limit=50)
+        if not data["count"]:
+            return await query_issue(tools, "no_data", interpretation)
         surface.body += [surface.row(surface.metric("Movimientos encontrados", data["count"], "number"), surface.metric("Monto total encontrado", data["amount"])), surface.table("Detalle de movimientos", TRANSACTION_COLUMNS, data["rows"])]
         surface.body.append(surface.notice(f"Mostrando {len(data['rows'])} de {data['count']} registros. Refina por mes, comercio o categoría desde el chat."))
         message = f"Encontré {data['count']} movimientos en {month}" + (f" para {plan.merchant or plan.category}" if plan.merchant or plan.category else "") + ". Puedes revisar su origen, destino y categoría."
@@ -68,16 +81,27 @@ async def render_plan(plan, tools, interpretation="local"):
     return response(surface, message, domain, tools, interpretation, period=month)
 
 
+async def query_issue(tools, reason, interpretation="local"):
+    result = await tools.call("report_query_issue", reason=reason)
+    surface = Surface()
+    surface.body.append(surface.text("Probemos con otra pregunta", "h2"))
+    surface.body.append(surface.notice(result["message"]))
+    for suggestion in result["suggestions"]:
+        surface.body.append(surface.text(suggestion))
+    return response(surface, result["message"], "resumen", tools, interpretation)
+
+
 async def answer(request, tools):
-    from app.presentation import presentation_options
     from app.planner import normalize
-    options = presentation_options(request.message)
-    if options and request.current_view:
+    plan, interpretation = await plan_query(request)
+    options = {key: getattr(plan, f"view_{key}") for key in ("order", "color", "chart_type", "sort_key", "target") if getattr(plan, f"view_{key}") is not None}
+    if plan.intent == "personalizar" and options and request.current_view:
         current = request.current_view.model_copy(deep=True)
         current.transaction = None  # Presentation edits never replay a payment confirmation.
         result = await tools.call("customize_financial_view", messages=current.a2ui, **options)
         current.a2ui = result["a2ui"]
         current.tools_used = tools.calls
+        current.interpretation = interpretation
         current.workspace_operation = "create" if any(word in normalize(request.message) for word in ("nueva pestana", "otra pestana", "nueva vista")) else "update"
         current.message = "Actualicé la vista con los ajustes solicitados. El orden se aplica a los registros visibles." if result["changed"] else "No encontré un componente compatible. Puedes indicar el título entre comillas y pedir orden, color o tipo de gráfica."
         # Refresh the compatibility chart used by mobile clients as well.
@@ -88,7 +112,8 @@ async def answer(request, tools):
             data = model[chart["data"]["path"].lstrip("/")]
             current.visualization = Visualization(type=chart["chartType"], title=chart["title"], labels=data["labels"], values=data["series"][0]["values"])
         return current
-    plan, interpretation = await plan_query(request)
+    if plan.intent == "personalizar":
+        return await query_issue(tools, "not_understood", interpretation)
     if plan.intent == "inversiones" and plan.plan_id:
         params = SimulationInput(plan_id=plan.plan_id, amount=plan.amount, months=plan.months, monthly_contribution=plan.monthly_contribution)
         result = await handle_action(ClientAction(name="simulate_investment", surfaceId="chat", sourceComponentId="chat", timestamp="", context=params.model_dump()), tools)

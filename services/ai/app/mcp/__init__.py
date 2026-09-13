@@ -1,1 +1,1 @@
-"""Herramientas MCP de consulta, sin operaciones financieras."""
+"""Herramientas MCP de consulta y una mutación controlada del dataset demo."""
