@@ -1,4 +1,4 @@
-﻿# Arquitectura
+# Arquitectura
 
 La especificación original se conserva en [Arquitectura.md](Arquitectura.md). La aplicación actual conecta Auth0, un dataset sintético amplio, herramientas MCP y superficies A2UI interactivas en la web.
 
@@ -23,14 +23,14 @@ flowchart LR
 | Móvil nativo | `apps/mobile` | Login, chat, voz y representación resumida de gráficas; catálogo A2UI completo pendiente |
 | Gateway | `services/api` | JWT Auth0, proxy de consultas/acciones/dashboard, voz; no ejecuta operaciones bancarias |
 | Planificador | `services/ai/app/planner.py` | Gemini produce un QueryPlan tipado; respaldo local si falta clave, red o cuota |
-| MCP | `services/ai/app/mcp` | Cliente y servidor reales por stdio; 11 herramientas invocadas durante consultas y acciones |
+| MCP | `services/ai/app/mcp` | Cliente y servidor reales por stdio; 13 herramientas invocadas durante consultas y acciones |
 | Datos | `datasets/synthetic`, `services/ai/app/data` | 11,602 movimientos reproducibles; SQLite en memoria, filtros y agregaciones |
 | A2UI | `services/ai/app/a2ui.py`, `packages/visual-engine` | Mensajes v0.9, catálogo financiero propio, Zod, Chart.js y controles interactivos |
 | Infraestructura | `infra` | Compose monta dataset de solo lectura; PostgreSQL/Mongo preparados, aún no usados por las consultas |
 
 ## Herramientas MCP
 
-`get_account_overview`, `get_cashflow`, `search_transactions`, `get_spending_breakdown`, `get_income_sources`, `get_budget_status`, `get_debts`, `simulate_debt_payoff`, `get_investment_plans`, `project_investment`, `get_subscriptions`.
+`get_account_overview`, `get_cashflow`, `search_transactions`, `get_spending_breakdown`, `get_income_sources`, `get_budget_status`, `get_debts`, `simulate_debt_payoff`, `get_investment_plans`, `project_investment`, `get_subscriptions`, `confirm_debt_payment`, `customize_financial_view`.
 
 El proceso MCP se inicia durante el ciclo de vida de FastAPI. Sus consultas usan importes en centavos, SQL parametrizado y una lista cerrada de campos de agrupación. El cliente registra nombres de herramientas en `tools_used` para inspeccionar el recorrido de cada respuesta.
 

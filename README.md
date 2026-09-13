@@ -97,7 +97,7 @@ FastAPI inicia automáticamente su cliente y servidor MCP stdio. Para inspeccion
 .\.venv\Scripts\python -m app.mcp.server
 ```
 
-El servidor expone 11 herramientas de consulta, presupuestos, créditos y proyecciones. Los conectores PostgreSQL/MongoDB y las operaciones con Solana siguen pendientes; las consultas actuales usan SQLite en memoria sobre el CSV incluido. Docker monta ese dataset como solo lectura.
+El servidor expone 13 herramientas de consulta, presupuestos, créditos y proyecciones. Los conectores PostgreSQL/MongoDB y las operaciones con Solana siguen pendientes; las consultas actuales usan SQLite en memoria sobre el CSV incluido. Docker monta ese dataset como solo lectura.
 
 ## Verificación
 

@@ -37,6 +37,13 @@ class Visualization(BaseModel):
     values: list[float]
 
 
+class TransactionResult(BaseModel):
+    transaction_id: str
+    confirmed: bool
+    balance_after: float
+    debt_after: dict | None = None
+
+
 class ChatResponse(BaseModel):
     message: str
     domain: FinancialDomain
@@ -44,6 +51,7 @@ class ChatResponse(BaseModel):
     visualization: Visualization
     a2ui: list[dict]
     surface_id: str
+    transaction: TransactionResult | None = None
     workspace_operation: Literal["create", "update"] = "create"
     tools_used: list[str] = Field(default_factory=list)
     interpretation: Literal["gemini", "local"] = "local"
@@ -54,7 +62,7 @@ class ChatResponse(BaseModel):
 
 class ClientAction(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    name: Literal["select_plan", "simulate_investment", "compare_plans", "simulate_debt", "show_transactions"]
+    name: Literal["select_plan", "simulate_investment", "compare_plans", "simulate_debt", "show_transactions", "confirm_debt_payment"]
     surfaceId: str = Field(max_length=100)
     sourceComponentId: str = Field(max_length=100)
     timestamp: str = Field(max_length=60)

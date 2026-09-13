@@ -3,11 +3,11 @@ from app.schemas import ChatResponse, Visualization, QueryPlan, SimulationInput,
 from app.planner import plan_query
 
 
-def response(surface, message, domain, tools, interpretation="local", period=None, simulation=None):
+def response(surface, message, domain, tools, interpretation="local", period=None, simulation=None, transaction=None):
     # Compatibilidad con el cliente móvil anterior mientras se renderiza A2UI.
     chart = next((item for item in surface.components if item["component"] == "FinancialChart"), None)
     data = surface.model[chart["data"]["path"].lstrip("/")] if chart else {"labels": [], "series": [{"values": []}]}
-    return ChatResponse(message=message, domain=domain, visualization=Visualization(type=chart["chartType"] if chart else "bar", title=chart["title"] if chart else "Resumen", labels=data["labels"], values=data["series"][0]["values"]), a2ui=surface.finish(), surface_id=surface.id, tools_used=tools.calls, interpretation=interpretation, period=period, simulation=simulation)
+    return ChatResponse(message=message, domain=domain, visualization=Visualization(type=chart["chartType"] if chart else "bar", title=chart["title"] if chart else "Resumen", labels=data["labels"], values=data["series"][0]["values"]), a2ui=surface.finish(), surface_id=surface.id, tools_used=tools.calls, interpretation=interpretation, period=period, simulation=simulation, transaction=transaction)
 
 
 async def render_plan(plan, tools, interpretation="local"):
@@ -74,6 +74,7 @@ async def answer(request, tools):
     options = presentation_options(request.message)
     if options and request.current_view:
         current = request.current_view.model_copy(deep=True)
+        current.transaction = None  # Presentation edits never replay a payment confirmation.
         result = await tools.call("customize_financial_view", messages=current.a2ui, **options)
         current.a2ui = result["a2ui"]
         current.tools_used = tools.calls
@@ -118,7 +119,18 @@ async def handle_action(action, tools):
         count = data["baseline"]["months"]
         surface.body.append(surface.chart("Tu deuda hasta llegar a cero", [f"Mes {i+1}" for i in range(count)], [{"label": title, "values": [data[key]["rows"][i]["balance"] if i < len(data[key]["rows"]) else 0 for i in range(count)]} for key, title in [("baseline", "Pago mínimo"), ("accelerated", "Con pago extra")]], "line"))
         surface.body.append(surface.notice("Simulación con tasa constante, sin compras nuevas, comisiones ni cargos adicionales. No se ha realizado ningún pago."))
+        if 0 < params.extra_payment <= data["debt"]["balance"]:
+            surface.body.append(surface.notice(f"Puedes confirmar ahora un abono único de {money(params.extra_payment)} a {data['debt']['name']}. Descontará ese monto de tu cuenta y de tu deuda de demostración; no programa pagos mensuales."))
+            surface.body.append(surface.button(f"Confirmar abono único de {money(params.extra_payment)}", "confirm_debt_payment", params.model_dump()))
         return response(surface, f"En {data['debt']['name']}, añadir {money(params.extra_payment)} al mes reduce el plazo en {data['months_saved']} meses y los intereses en {money(data['interest_saved'])}.", "deudas", tools)
+    if action.name == "confirm_debt_payment":
+        params = DebtInput.model_validate(context)
+        result = await tools.call("confirm_debt_payment", **params.model_dump())
+        surface = Surface()
+        surface.body.append(surface.text("Pago confirmado", "h2"))
+        surface.body.append(surface.row(surface.metric("Saldo disponible", result["balance_after"]), surface.metric("Deuda restante", result["debt_after"]["balance"])))
+        surface.body.append(surface.notice(f"Abono único registrado en el perfil de demostración. Folio: {result['transaction_id']}"))
+        return response(surface, f"Pago confirmado de {money(params.extra_payment)}. Tu saldo disponible es {money(result['balance_after'])}.", "deudas", tools, transaction=result)
     if action.name == "compare_plans":
         return await render_plan(QueryPlan(intent="inversiones", amount=context.get("amount", 10000)), tools)
     if action.name == "show_transactions":

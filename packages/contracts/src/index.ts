@@ -9,6 +9,13 @@ export interface Visualization {
   values: number[];
 }
 
+export interface TransactionResult {
+  transaction_id: string;
+  confirmed: boolean;
+  balance_after: number;
+  debt_after: Record<string, unknown> | null;
+}
+
 export interface ChatResponse {
   message: string;
   domain: FinancialDomain;
@@ -16,6 +23,7 @@ export interface ChatResponse {
   visualization: Visualization;
   a2ui: unknown[];
   surface_id: string;
+  transaction?: TransactionResult | null;
   workspace_operation?: 'create' | 'update';
   tools_used: string[];
   interpretation: 'gemini' | 'local';

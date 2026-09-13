@@ -10,7 +10,7 @@
       "properties": { "event": {
         "type": "object",
         "properties": {
-          "name": { "enum": ["select_plan", "simulate_investment", "compare_plans", "simulate_debt", "show_transactions"] },
+          "name": { "enum": ["select_plan", "simulate_investment", "compare_plans", "simulate_debt", "show_transactions", "confirm_debt_payment"] },
           "context": { "type": "object" }
         },
         "required": ["name", "context"], "additionalProperties": false

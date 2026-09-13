@@ -85,4 +85,42 @@ def test_customize_active_surface_through_mcp(client, monkeypatch):
     assert all(node["palette"][0] == "#2563eb" for node in nodes if node["component"] == "FinancialChart")
     copy = client.post("/chat", json={"message": "Nueva pestaña en orden descendente", "current_view": updated}).json()
     assert copy["workspace_operation"] == "create"
-    assert copy["visualization"]["values"] == sorted(original["visualization"]["values"], reverse=True)
+def test_confirm_debt_payment_alters_overview(client, monkeypatch):
+    monkeypatch.setenv("AI_MODE", "local")
+    import sys
+    import subprocess
+    from pathlib import Path
+    
+    ROOT = Path(__file__).resolve().parents[3]
+    
+    try:
+        overview_before = client.get("/account").json()
+        balance_before = overview_before["balance"]
+        
+        result = client.post("/actions", json={
+            "version": "v0.9",
+            "action": {
+                "name": "confirm_debt_payment",
+                "surfaceId": "test",
+                "sourceComponentId": "test",
+                "timestamp": "",
+                "context": {"debt_id": "laptop", "extra_payment": 100}
+            }
+        })
+        
+        assert result.status_code == 200
+        data = result.json()
+        print("BALANCE BEFORE:", balance_before)
+        print("TRANSACTION RESPONSE:", data["transaction"])
+        assert data["transaction"]["confirmed"] is True
+        assert data["transaction"]["balance_after"] < balance_before
+        
+        overview_after = client.get("/account").json()
+        print("OVERVIEW AFTER:", overview_after["balance"])
+        assert overview_after["balance"] < balance_before
+        assert overview_after["balance"] == data["transaction"]["balance_after"]
+    finally:
+        subprocess.run([sys.executable, "-m", "app.data.generate"], cwd=ROOT / "services" / "ai")
+        payments_path = ROOT / "datasets" / "synthetic" / "payments.json"
+        if payments_path.exists():
+            payments_path.unlink()

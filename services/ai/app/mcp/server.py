@@ -45,13 +45,19 @@ def get_budget_status(month: str | None = None) -> dict:
 @mcp.tool()
 def get_debts() -> dict:
     """Créditos: saldo, tasa anual, pago mínimo, límite y vencimiento."""
-    return {"rows": repository().profile["debts"], "total": sum(item["balance"] for item in repository().profile["debts"])}
+    return repository().get_debts()
 
 
 @mcp.tool()
 def simulate_debt_payoff(debt_id: str, extra_payment: float = 500) -> dict:
     """Compara pagos mínimos contra abonos adicionales. No efectúa pagos."""
     return debt_payoff(debt_id, extra_payment)
+
+
+@mcp.tool()
+def confirm_debt_payment(debt_id: str, extra_payment: float) -> dict:
+    """Confirma un abono único: registra el egreso y reduce la deuda en el dataset de demostración. Requiere confirmación explícita del usuario."""
+    return repository().apply_debt_payment(debt_id, extra_payment)
 
 
 @mcp.tool()

@@ -4,7 +4,7 @@ import type { UIAction } from '@banortehack/contracts';
 import { DatasetChart } from './index';
 
 export const CATALOG_ID = 'banortehack:finance-v1';
-const action = z.object({ event: z.object({ name: z.enum(['select_plan', 'simulate_investment', 'compare_plans', 'simulate_debt', 'show_transactions']), context: z.record(z.string(), z.unknown()) }) });
+const action = z.object({ event: z.object({ name: z.enum(['select_plan', 'simulate_investment', 'compare_plans', 'simulate_debt', 'show_transactions', 'confirm_debt_payment']), context: z.record(z.string(), z.unknown()) }) });
 const nodeSchema = z.object({
   id: z.string().max(100), component: z.enum(['Column', 'Row', 'Text', 'Metric', 'FinancialChart', 'DataTable', 'Button', 'Notice', 'PlanCard', 'DebtCard', 'Simulator', 'BudgetList', 'GoalList']),
   children: z.array(z.string()).max(100).optional(), text: z.string().max(4000).optional(), title: z.string().optional(), variant: z.string().optional(),
